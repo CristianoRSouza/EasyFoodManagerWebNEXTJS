@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { ExternalLink, Headset, Loader2, LogOut } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu,
@@ -10,7 +10,7 @@ import {
 import { cn } from "@/shared/ui/cn";
 import { useRuntime } from "@/shared/runtime/runtime-context";
 import { useTenant } from "@/shared/tenant/tenant-context";
-import { sessionClient } from "@/shared/session/session-client";
+import { useSignOut } from "@/shared/session/use-sign-out";
 import { APP_VERSION_LABEL } from "@/shared/version";
 import { SUPPORT_GROUP_LABEL, buildNavGroups, isNavItemActive, type NavItem } from "./nav-items";
 import { useExternalAccess } from "./external-access";
@@ -19,7 +19,7 @@ export function AppSidebar() {
   const { state, isMobile, setOpenMobile } = useSidebar();
   const collapsed = state === "collapsed";
   const pathname = usePathname();
-  const router = useRouter();
+  const handleSignOut = useSignOut();
   const { backend } = useRuntime();
   const { isSystemAdmin, isCompanyAdmin } = useTenant();
   const { openBilling, openAiCredits, openSupport, billingLoading, supportLoading } = useExternalAccess();
@@ -27,11 +27,6 @@ export function AppSidebar() {
 
   const handleNavClick = () => {
     if (isMobile) setOpenMobile(false);
-  };
-
-  const handleSignOut = async () => {
-    await sessionClient.logout().catch(() => undefined);
-    router.replace("/login");
   };
 
   const renderExternal = (item: NavItem) => (

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { KeyRound, LogOut, User } from "lucide-react";
 import { Button } from "@/shared/ui/primitives/button";
@@ -10,9 +9,10 @@ import {
 } from "@/shared/ui/primitives/dropdown-menu";
 import { useToast } from "@/shared/ui/use-toast";
 import { sessionClient } from "@/shared/session/session-client";
+import { useSignOut } from "@/shared/session/use-sign-out";
 
 export function UserMenu() {
-  const router = useRouter();
+  const handleSignOut = useSignOut();
   const { toast } = useToast();
   const [resetLoading, setResetLoading] = useState(false);
   const { data: user } = useQuery({ queryKey: ["session", "user"], queryFn: sessionClient.currentUser, staleTime: 5 * 60_000 });
@@ -29,11 +29,6 @@ export function UserMenu() {
     } finally {
       setResetLoading(false);
     }
-  };
-
-  const handleSignOut = async () => {
-    await sessionClient.logout().catch(() => undefined);
-    router.replace("/login");
   };
 
   return (

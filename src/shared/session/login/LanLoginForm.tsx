@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { Eraser, Loader2, Lock, Mail, Server } from "lucide-react";
 import { Button } from "@/shared/ui/primitives/button";
 import { Input } from "@/shared/ui/primitives/input";
@@ -19,6 +20,7 @@ import { useExpiredSessionNotice } from "./use-expired-session-notice";
 export function LanLoginForm() {
   const { toast } = useToast();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -64,6 +66,8 @@ export function LanLoginForm() {
       await sessionClient.login(trimmedEmail, password);
       rememberedEmail.save(trimmedEmail);
       toast({ title: "Sessão iniciada" });
+      // Nada do usuário anterior desta aba pode aparecer para quem acabou de entrar.
+      queryClient.clear();
       router.replace("/");
     } catch (error) {
       handleLoginFailure(error);

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { Cloud, Eraser, Loader2, Lock, Mail } from "lucide-react";
 import { Button } from "@/shared/ui/primitives/button";
 import { Input } from "@/shared/ui/primitives/input";
@@ -17,6 +18,7 @@ import { useExpiredSessionNotice } from "./use-expired-session-notice";
 export function CloudLoginForm() {
   const { toast } = useToast();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -41,6 +43,8 @@ export function CloudLoginForm() {
       setPassword("");
       rememberedEmail.save(email.trim());
       toast({ title: "Sessão iniciada" });
+      // Nada do usuário anterior desta aba pode aparecer para quem acabou de entrar.
+      queryClient.clear();
       router.replace("/");
     } catch (error) {
       toast({

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { KeyRound, Loader2, Server } from "lucide-react";
 import { Button } from "@/shared/ui/primitives/button";
 import { Input } from "@/shared/ui/primitives/input";
@@ -20,6 +21,7 @@ interface Props {
 
 export function BootstrapPasswordForm({ email, onCancel, onDone }: Props) {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [provisioningCode, setProvisioningCode] = useState("");
@@ -65,6 +67,8 @@ export function BootstrapPasswordForm({ email, onCancel, onDone }: Props) {
       setProvisioningCode("");
       rememberedEmail.save(email.trim());
       toast({ title: "Senha local cadastrada", description: "Nas próximas vezes utilize este email e esta senha para entrar." });
+      // Nada do usuário anterior desta aba pode aparecer para quem acabou de entrar.
+      queryClient.clear();
       onDone();
     } finally {
       setSubmitting(false);
