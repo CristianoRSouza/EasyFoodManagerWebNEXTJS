@@ -1,16 +1,8 @@
+import type { FirstAccessInput, SessionUser } from "@/shared/contracts/session";
 import { ApiError } from "@/shared/http/api-error";
-import { request, toResult } from "@/shared/http/api-client";
+import { readBody, request, toResult } from "@/shared/http/api-client";
 
-export interface SessionUser {
-  id: string;
-  email: string | null;
-}
-
-export interface FirstAccessInput {
-  email: string;
-  newPassword: string;
-  provisioningCode?: string;
-}
+export type { FirstAccessInput, SessionUser };
 
 const SESSION_BASE = "/api/session";
 
@@ -21,7 +13,7 @@ const SESSION_BASE = "/api/session";
 async function postSession<T>(path: string, body: unknown): Promise<T> {
   const response = await request(path, { method: "POST", body }, SESSION_BASE);
   if (response.status === 401) {
-    const payload = (await response.json().catch(() => ({}))) as { code?: string; message?: string };
+    const payload = ((await readBody(response)) ?? {}) as { code?: string; message?: string };
     throw new ApiError(401, payload.code ?? "http_401", payload.message ?? "Email ou senha incorretos.");
   }
   return toResult<T>(response);

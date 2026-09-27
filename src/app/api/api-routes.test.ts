@@ -64,6 +64,19 @@ describe("/api/session", () => {
     expect(response.status).toBe(204);
     expect(gateway.firstAccess).toHaveBeenCalledWith({ email: "a@b", newPassword: "123456", provisioningCode: undefined });
   });
+
+  it("primeiro acesso ok repassa os cookies do gateway, como o login", async () => {
+    gateway.firstAccess.mockResolvedValue({ ok: true, data: null, setCookies: ["efm_session=; Max-Age=0"] });
+    const response = await firstAccess(post("http://x/api/session/first-access", { email: "a@b", newPassword: "123456" }));
+    expect(response.status).toBe(204);
+    expect(response.headers.getSetCookie()).toEqual(["efm_session=; Max-Age=0"]);
+  });
+
+  it("GET /api/session sem usuário responde a mensagem de sessão expirada", async () => {
+    gateway.currentUser.mockResolvedValue(null);
+    const response = await session(new NextRequest("http://x/api/session"));
+    expect(await response.json()).toEqual({ code: "unauthenticated", message: "Sua sessão expirou. Entre de novo." });
+  });
 });
 
 describe("/api/v1/[...path]", () => {

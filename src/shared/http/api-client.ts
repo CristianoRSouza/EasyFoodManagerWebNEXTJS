@@ -15,7 +15,7 @@ interface RequestOptions {
 }
 
 /** Lê o corpo como JSON sem quebrar quando ele não é JSON. */
-async function readBody(response: Response): Promise<unknown> {
+export async function readBody(response: Response): Promise<unknown> {
   const text = await response.text();
   if (!text) return null;
   try {

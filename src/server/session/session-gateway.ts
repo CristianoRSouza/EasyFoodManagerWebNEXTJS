@@ -1,20 +1,12 @@
 import "server-only";
+import type { FirstAccessInput, SessionUser } from "@/shared/contracts/session";
 import type { ApiErrorBody } from "../backend/error-body";
 
-export interface SessionUser {
-  id: string;
-  email: string | null;
-}
+export type { FirstAccessInput, SessionUser };
 
 export interface Credentials {
   email: string;
   password: string;
-}
-
-export interface FirstAccessInput {
-  email: string;
-  newPassword: string;
-  provisioningCode?: string;
 }
 
 export type GatewayResult<T> =
