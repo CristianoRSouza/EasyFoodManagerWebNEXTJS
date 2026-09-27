@@ -96,4 +96,29 @@ describe("CloudSessionGateway", () => {
     expect(response.headers.get("content-disposition")).toBe('attachment; filename="notas.zip"');
     expect(new Uint8Array(await response.arrayBuffer())).toEqual(new Uint8Array([80, 75]));
   });
+
+  describe("cookies retransmitidos ficam visíveis ao proxy (Path=/, sem Domain)", () => {
+    const raw = "efa_session=xyz; Domain=api.nuvem; Path=/api; HttpOnly";
+    const normalized = "efa_session=xyz; Path=/; HttpOnly";
+
+    it("no login", async () => {
+      const fetchFn = vi.fn().mockResolvedValue(json(200, { user: { id: "u1", email: "a@b.com" } }, raw));
+      const result = await new CloudSessionGateway(config, fetchFn).login({ email: "a@b.com", password: "x" });
+      expect(result.setCookies).toEqual([normalized]);
+    });
+
+    it("no logout", async () => {
+      const fetchFn = vi.fn().mockResolvedValue(new Response(null, { status: 204, headers: { "set-cookie": raw } }));
+      expect(await new CloudSessionGateway(config, fetchFn).logout("efa_session=xyz")).toEqual([normalized]);
+    });
+
+    it("no repasse, com sucesso ou erro", async () => {
+      for (const backend of [json(200, { ok: true }, raw), json(403, { error: "forbidden" }, raw)]) {
+        const response = await new CloudSessionGateway(config, vi.fn().mockResolvedValue(backend)).forward({
+          method: "GET", path: "/v1/me/stores", search: "", headers: new Headers(), body: null, cookieHeader: "efa_session=xyz",
+        });
+        expect(response.headers.getSetCookie()).toEqual([normalized]);
+      }
+    });
+  });
 });

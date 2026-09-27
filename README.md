@@ -19,6 +19,13 @@ npm run dev            # http://localhost:3000
 O navegador só fala com o Next (`/api/session/*` e `/api/v1/*`); o token nunca
 fica acessível a JavaScript.
 
+Variáveis opcionais (ver `.env.example`):
+
+| Variável | Uso |
+|---|---|
+| `SESSION_COOKIE_SECURE` | `false` quando o painel é servido em HTTP puro na rede da loja; `true` atrás de HTTPS. Ausente: `true` em produção, `false` em desenvolvimento. |
+| `ADMIN_PLATFORM_URL` | Endereço do EasyBilling (Planos e Créditos IA), lido só no servidor. Padrão: `https://billing.easysoftcloud.com.br`. |
+
 ## Verificar
 
 ```bash

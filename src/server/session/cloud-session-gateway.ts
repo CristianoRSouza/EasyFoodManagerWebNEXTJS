@@ -2,6 +2,7 @@ import "server-only";
 import type { ServerConfig } from "../config";
 import { backendUrl } from "../backend/backend-url";
 import { parseJsonSafely, toErrorBody, type ApiErrorBody } from "../backend/error-body";
+import { normalizeRelayedCookie } from "./cookies";
 import { jsonResponse, pickHeaders } from "./json-response";
 import {
   FORWARDED_REQUEST_HEADERS,
@@ -21,6 +22,9 @@ const LOGIN_MESSAGES: Partial<Record<number, string>> = {
   429: "Muitas tentativas. Aguarde um momento e tente novamente.",
 };
 
+/** Cookies da API com Path/Domain ajustados ao painel — ver `normalizeRelayedCookie`. */
+const relayedCookies = (response: Response) => response.headers.getSetCookie().map(normalizeRelayedCookie);
+
 /** EasyFoodAPI: a sessão é um cookie httpOnly da própria API; o Next só retransmite. */
 export class CloudSessionGateway implements SessionGateway {
   constructor(
@@ -36,7 +40,7 @@ export class CloudSessionGateway implements SessionGateway {
     });
     if (!response) return this.unreachableResult();
     const parsed = parseJsonSafely(await response.text());
-    const setCookies = response.headers.getSetCookie();
+    const setCookies = relayedCookies(response);
     if (!response.ok) {
       const error = toErrorBody(response.status, parsed);
       const message = LOGIN_MESSAGES[response.status] ?? error.message;
@@ -57,7 +61,7 @@ export class CloudSessionGateway implements SessionGateway {
   async logout(cookieHeader: string | null): Promise<string[]> {
     if (!cookieHeader) return [];
     const response = await this.call("/v1/auth/logout", { method: "POST", headers: { cookie: cookieHeader } });
-    return response ? response.headers.getSetCookie() : [];
+    return response ? relayedCookies(response) : [];
   }
 
   async firstAccess(_input: FirstAccessInput): Promise<GatewayResult<null>> {
@@ -77,7 +81,7 @@ export class CloudSessionGateway implements SessionGateway {
     const backend = await this.call(request.path, { method: request.method, headers, body: request.body }, request.search);
     if (!backend) return jsonResponse(503, this.unreachable());
 
-    const setCookies = backend.headers.getSetCookie();
+    const setCookies = relayedCookies(backend);
     if (!backend.ok) {
       return jsonResponse(backend.status, toErrorBody(backend.status, parseJsonSafely(await backend.text())), setCookies);
     }

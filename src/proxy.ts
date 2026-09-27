@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { CLOUD_SESSION_COOKIE, LAN_SESSION_COOKIE } from "@/server/session/cookie-names";
 
-/** `efm_session`: gravado pelo Next no modo loja. `efa_session`: gravado pela EasyFoodAPI na nuvem. */
-export const SESSION_COOKIE_NAMES = ["efm_session", "efa_session"] as const;
+export const SESSION_COOKIE_NAMES = [LAN_SESSION_COOKIE, CLOUD_SESSION_COOKIE] as const;
 
 const PUBLIC_PATHS = ["/login", "/reset-password"];
 

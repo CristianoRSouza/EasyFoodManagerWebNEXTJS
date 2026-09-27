@@ -21,7 +21,11 @@ const schema = z.object({
     errorMap: () => ({ message: 'BACKEND deve ser "cloud" ou "lan".' }),
   }),
   EASYFOOD_API_URL: z.string().url({ message: "EASYFOOD_API_URL deve ser uma URL (ex.: http://127.0.0.1:4080)." }),
-  NEXT_PUBLIC_ADMIN_PLATFORM_URL: z.string().url().optional(),
+  // Lido só no servidor: o endereço chega ao navegador pelo RuntimeProvider.
+  ADMIN_PLATFORM_URL: z.string().url().optional(),
+  SESSION_COOKIE_SECURE: z
+    .enum(["true", "false"], { errorMap: () => ({ message: 'SESSION_COOKIE_SECURE deve ser "true" ou "false".' }) })
+    .optional(),
   NODE_ENV: z.string().optional(),
 });
 
@@ -38,7 +42,10 @@ export function readServerConfig(env: NodeJS.ProcessEnv = process.env): ServerCo
     backend: parsed.data.BACKEND,
     apiUrl,
     apiDisplayOrigin: new URL(apiUrl).host,
-    adminPlatformUrl: withoutTrailingSlash(parsed.data.NEXT_PUBLIC_ADMIN_PLATFORM_URL ?? DEFAULT_ADMIN_PLATFORM_URL),
-    secureCookies: parsed.data.NODE_ENV === "production",
+    adminPlatformUrl: withoutTrailingSlash(parsed.data.ADMIN_PLATFORM_URL ?? DEFAULT_ADMIN_PLATFORM_URL),
+    // Loja servida em HTTP puro na LAN precisa de "false": navegador descarta cookie Secure fora de HTTPS.
+    secureCookies: parsed.data.SESSION_COOKIE_SECURE
+      ? parsed.data.SESSION_COOKIE_SECURE === "true"
+      : parsed.data.NODE_ENV === "production",
   };
 }

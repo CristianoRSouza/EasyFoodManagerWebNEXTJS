@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { LAN_SESSION_COOKIE, expiredSessionCookie, readCookie, sessionCookie } from "./cookies";
+import { LAN_SESSION_COOKIE, expiredSessionCookie, normalizeRelayedCookie, readCookie, sessionCookie } from "./cookies";
 
 describe("cookies de sessão", () => {
   it("lê um cookie entre vários", () => {
@@ -21,5 +21,25 @@ describe("cookies de sessão", () => {
 
   it("apagar é gravar vazio com Max-Age=0", () => {
     expect(expiredSessionCookie(false)).toBe("efm_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0");
+  });
+});
+
+describe("normalizeRelayedCookie", () => {
+  it("troca Path restrito por Path=/ para o proxy enxergar o cookie em todas as páginas", () => {
+    expect(normalizeRelayedCookie("efa_session=xyz; Path=/api; HttpOnly")).toBe("efa_session=xyz; Path=/; HttpOnly");
+  });
+
+  it("remove Domain para o cookie ficar com o host do painel", () => {
+    expect(normalizeRelayedCookie("efa_session=xyz; Domain=api.nuvem; Path=/; Secure")).toBe("efa_session=xyz; Path=/; Secure");
+  });
+
+  it("preserva os demais atributos, na ordem", () => {
+    expect(normalizeRelayedCookie("efa_session=a=b; path=/v1; HttpOnly; SameSite=Lax; Max-Age=60; domain=.x.com; Secure")).toBe(
+      "efa_session=a=b; Path=/; HttpOnly; SameSite=Lax; Max-Age=60; Secure",
+    );
+  });
+
+  it("cookie sem Path ganha Path=/", () => {
+    expect(normalizeRelayedCookie("efa_session=; Max-Age=0")).toBe("efa_session=; Max-Age=0; Path=/");
   });
 });
