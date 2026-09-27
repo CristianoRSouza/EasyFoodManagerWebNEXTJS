@@ -1,0 +1,264 @@
+/* As fontes são carregadas no <head> do layout raiz (preconnect + link), não por @import:
+   o @import serializa o pedido atrás do download e parse deste arquivo. */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* =========================================================================
+   EasyBilling Design System — "Navy Trust" (dark-only)
+   Copiado do EasyFood Manager legado sem alteração de valores.
+   ========================================================================= */
+
+@layer base {
+  :root {
+    --radius: 0.75rem;
+
+    --background: 222 47% 6%;            /* navy quase preto */
+    --foreground: 213 27% 94%;
+
+    --card: 222 40% 10%;
+    --card-foreground: 213 27% 94%;
+
+    --popover: 222 40% 10%;
+    --popover-foreground: 213 27% 94%;
+
+    --primary: 210 75% 58%;              /* azul-céu assinatura #3B8EE8 */
+    --primary-foreground: 222 47% 8%;
+    --primary-glow: 205 95% 72%;
+
+    --secondary: 218 32% 16%;
+    --secondary-foreground: 213 27% 94%;
+
+    --muted: 220 30% 14%;
+    --muted-foreground: 215 18% 65%;
+
+    --accent: 210 75% 58%;
+    --accent-foreground: 222 47% 8%;
+
+    --destructive: 0 72% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 155 65% 45%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 55%;
+    --warning-foreground: 222 47% 8%;
+
+    --info: 205 95% 72%;
+    --info-foreground: 222 47% 8%;
+
+    --border: 218 28% 18%;
+    --input: 218 28% 14%;
+    --ring: 210 75% 58%;
+
+    --sidebar-background: 224 50% 5%;
+    --sidebar-foreground: 213 27% 88%;
+    --sidebar-primary: 210 75% 58%;
+    --sidebar-primary-foreground: 222 47% 8%;
+    --sidebar-accent: 218 38% 13%;
+    --sidebar-accent-foreground: 213 27% 96%;
+    --sidebar-border: 222 35% 12%;
+    --sidebar-ring: 210 75% 58%;
+
+    --chart-1: 210 75% 58%;
+    --chart-2: 205 95% 72%;
+    --chart-3: 155 65% 45%;
+    --chart-4: 38 92% 55%;
+    --chart-5: 0 72% 55%;
+
+    /* Gradientes e sombras assinatura */
+    --gradient-primary: linear-gradient(135deg, hsl(210 75% 58%), hsl(205 95% 72%));
+    --gradient-surface: linear-gradient(180deg, hsl(222 40% 12%), hsl(222 47% 6%));
+    --gradient-hero:
+      radial-gradient(80% 60% at 20% 0%,   hsl(210 75% 58% / 0.18), transparent 60%),
+      radial-gradient(60% 50% at 100% 100%, hsl(205 95% 72% / 0.12), transparent 60%);
+
+    --shadow-elegant:
+      0 20px 40px -20px hsl(222 80% 4% / 0.6),
+      0 8px 24px  -16px hsl(210 80% 30% / 0.25);
+    --shadow-glow:
+      0 0 0 1px hsl(210 75% 58% / 0.15),
+      0 8px 30px -8px hsl(210 75% 58% / 0.35);
+
+    --transition-smooth: 200ms cubic-bezier(0.32, 0.72, 0, 1);
+
+    --font-heading: var(--font-sora), var(--font-manrope), system-ui, sans-serif;
+    --font-body: var(--font-manrope), system-ui, sans-serif;
+    --font-mono: ui-monospace, 'JetBrains Mono', monospace;
+  }
+
+  /* Dark-only: .dark herda exatamente os mesmos tokens do :root.
+     Mantemos a classe por compatibilidade com componentes shadcn. */
+  .dark {
+    --background: 222 47% 6%;
+    --foreground: 213 27% 94%;
+    --card: 222 40% 10%;
+    --card-foreground: 213 27% 94%;
+    --popover: 222 40% 10%;
+    --popover-foreground: 213 27% 94%;
+    --primary: 210 75% 58%;
+    --primary-foreground: 222 47% 8%;
+    --primary-glow: 205 95% 72%;
+    --secondary: 218 32% 16%;
+    --secondary-foreground: 213 27% 94%;
+    --muted: 220 30% 14%;
+    --muted-foreground: 215 18% 65%;
+    --accent: 210 75% 58%;
+    --accent-foreground: 222 47% 8%;
+    --destructive: 0 72% 55%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 155 65% 45%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 55%;
+    --warning-foreground: 222 47% 8%;
+    --info: 205 95% 72%;
+    --info-foreground: 222 47% 8%;
+    --border: 218 28% 18%;
+    --input: 218 28% 14%;
+    --ring: 210 75% 58%;
+    --sidebar-background: 224 50% 5%;
+    --sidebar-foreground: 213 27% 88%;
+    --sidebar-primary: 210 75% 58%;
+    --sidebar-primary-foreground: 222 47% 8%;
+    --sidebar-accent: 218 38% 13%;
+    --sidebar-accent-foreground: 213 27% 96%;
+    --sidebar-border: 222 35% 12%;
+    --sidebar-ring: 210 75% 58%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html, body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-body);
+  }
+  body {
+    background-image: var(--gradient-hero);
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    letter-spacing: -0.01em;
+  }
+  code, pre, .font-mono {
+    font-family: var(--font-mono);
+  }
+}
+
+@layer utilities {
+  .glow-primary {
+    box-shadow: var(--shadow-glow);
+  }
+  .glow-success {
+    box-shadow: 0 0 12px -3px hsl(var(--success) / 0.5);
+  }
+  .glow-destructive {
+    box-shadow: 0 0 12px -3px hsl(var(--destructive) / 0.5);
+  }
+  .glass-panel {
+    @apply bg-card/95 border border-border/50;
+  }
+  .shadow-elegant {
+    box-shadow: var(--shadow-elegant);
+  }
+  .bg-gradient-primary {
+    background: var(--gradient-primary);
+  }
+  .bg-gradient-surface {
+    background: var(--gradient-surface);
+  }
+
+  /* Scrollbar temática para a sidebar */
+  .sidebar-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--sidebar-accent)) transparent;
+  }
+  .sidebar-scroll::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .sidebar-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .sidebar-scroll::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--sidebar-accent));
+    border-radius: 9999px;
+    border: 1px solid transparent;
+    background-clip: padding-box;
+    transition: background-color 0.2s ease;
+  }
+  .sidebar-scroll:hover::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--sidebar-primary) / 0.6);
+  }
+  .sidebar-scroll::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--sidebar-primary));
+  }
+  .sidebar-scroll::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  /* Scrollbar refinada para o painel do AI Chat */
+  .ai-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted-foreground) / 0.25) transparent;
+  }
+  .ai-scroll::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .ai-scroll::-webkit-scrollbar-track {
+    background: transparent;
+    margin: 4px 0;
+  }
+  .ai-scroll::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--muted-foreground) / 0.25);
+    border-radius: 9999px;
+    border: 1px solid transparent;
+    background-clip: padding-box;
+    transition: background-color 0.2s ease;
+  }
+  .ai-scroll:hover::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--muted-foreground) / 0.45);
+  }
+  .ai-scroll::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--primary) / 0.6);
+  }
+  .ai-scroll::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+  .ai-scroll-thin::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  /* Scrollbar auto-hide */
+  .autohide-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+  }
+  .autohide-scroll::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .autohide-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .autohide-scroll::-webkit-scrollbar-thumb {
+    background-color: transparent;
+    border-radius: 9999px;
+    transition: background-color 0.4s ease;
+  }
+  .autohide-scroll.is-scrolling {
+    scrollbar-color: hsl(var(--muted-foreground) / 0.35) transparent;
+  }
+  .autohide-scroll.is-scrolling::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--muted-foreground) / 0.35);
+  }
+  .autohide-scroll.is-scrolling::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--primary) / 0.6);
+  }
+}
