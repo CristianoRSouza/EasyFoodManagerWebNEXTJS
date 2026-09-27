@@ -6,7 +6,14 @@ export function readCookie(header: string | null, name: string): string | null {
   if (!header) return null;
   for (const part of header.split(";")) {
     const [key, ...rest] = part.trim().split("=");
-    if (key === name) return decodeURIComponent(rest.join("="));
+    if (key === name) {
+      try {
+        return decodeURIComponent(rest.join("="));
+      } catch {
+        // Cookie vem do cliente — um valor mal formado (ex.: "%") não pode virar 500; é sessão ausente.
+        return null;
+      }
+    }
   }
   return null;
 }

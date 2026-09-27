@@ -8,6 +8,10 @@ describe("cookies de sessão", () => {
     expect(readCookie("outro=1", LAN_SESSION_COOKIE)).toBeNull();
   });
 
+  it("cookie malformado não derruba a leitura", () => {
+    expect(readCookie("efm_session=%", LAN_SESSION_COOKIE)).toBeNull();
+  });
+
   it("grava httpOnly, SameSite=Lax, com validade e Secure quando pedido", () => {
     expect(sessionCookie("tok", 28800, true)).toBe(
       "efm_session=tok; Path=/; HttpOnly; SameSite=Lax; Max-Age=28800; Secure",

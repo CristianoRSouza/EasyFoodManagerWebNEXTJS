@@ -57,6 +57,11 @@ describe("LanSessionGateway", () => {
     expect(await gateway.currentUser(null)).toBeNull();
   });
 
+  it("cookie malformado é ausência de sessão, não erro", async () => {
+    const gateway = new LanSessionGateway(config, vi.fn());
+    expect(await gateway.currentUser("efm_session=%")).toBeNull();
+  });
+
   it("logout apaga o cookie sem chamar a API", async () => {
     const fetchFn = vi.fn();
     expect(await new LanSessionGateway(config, fetchFn).logout(`efm_session=${jwt}`)).toEqual([
