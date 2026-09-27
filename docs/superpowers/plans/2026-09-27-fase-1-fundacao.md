@@ -18,7 +18,7 @@
 
 - **Referência visual é SEMPRE o legado (`LEGACY`). Nada de UI vem do EASYCOMMAND REFATORADO.**
 - Visual idêntico: mesmas classes Tailwind, mesmos textos, mesmos ícones, mesmos tokens de `LEGACY/src/index.css`. Não criar tema claro nem tokens novos.
-- Tailwind **3.4** (não v4). Fontes Sora/Manrope pelo mesmo `<link>` do Google Fonts do legado (garante o mesmo arquivo de fonte e o mesmo nome de família; `next/font` renomearia a família e mudaria o fallback).
+- Tailwind **3.4** (não v4). Fontes Sora (500–800) e Manrope (400–700) via `next/font/google`, auto-hospedadas (sem chamada ao Google em runtime, sem salto de layout); `--font-heading`/`--font-body` apontam para as famílias geradas.
 - `BACKEND=cloud|lan` é lido **só no servidor**. Sem detecção por hostname, sem mock, sem Electron.
 - Nenhum token de sessão acessível por JavaScript no navegador.
 - Identificadores em inglês; textos de interface e mensagens em PT-BR (copiados do legado quando existirem).
@@ -270,9 +270,15 @@ Depois, trocar só o comentário das duas primeiras linhas (o conteúdo CSS não
 ```
 E o comentário do cabeçalho `Adaptado para o stack desta app (React + Vite + Tailwind v3 + Electron).` para `Copiado do EasyFood Manager legado sem alteração de valores.`
 
-Conferir que só comentários mudaram:
+As fontes passam a vir do `next/font` (Task 6, `layout.tsx`), que expõe as famílias em `--font-sora` e `--font-manrope`. Trocar só as duas declarações de família (mesma ordem de fallback do legado):
+```css
+    --font-heading: var(--font-sora), var(--font-manrope), system-ui, sans-serif;
+    --font-body: var(--font-manrope), system-ui, sans-serif;
+```
+
+Conferir que só comentários e essas duas linhas mudaram:
 ```bash
-diff <(grep -v '^\s*/\*\|^\s*\*\|^\s*Adaptado\|^\s*o @import' ../easyfoodmanagerWEB/src/index.css) <(grep -v '^\s*/\*\|^\s*\*\|^\s*Copiado\|^\s*o @import' src/app/globals.css)
+diff <(grep -v '^\s*/\*\|^\s*\*\|^\s*Adaptado\|^\s*o @import\|--font-heading\|--font-body' ../easyfoodmanagerWEB/src/index.css) <(grep -v '^\s*/\*\|^\s*\*\|^\s*Copiado\|^\s*o @import\|--font-heading\|--font-body' src/app/globals.css)
 ```
 Expected: sem saída.
 
@@ -2196,12 +2202,16 @@ export function Providers({ children }: { children: ReactNode }) {
 }
 ```
 
-`src/app/layout.tsx` (mesmo `<head>` do `LEGACY/index.html`, sem PWA/instalação desktop):
+`src/app/layout.tsx` (metadados do `LEGACY/index.html`, sem PWA/instalação desktop; fontes auto-hospedadas com os mesmos pesos do legado):
 ```tsx
 import type { Metadata, Viewport } from "next";
+import { Manrope, Sora } from "next/font/google";
 import type { ReactNode } from "react";
 import { Providers } from "./providers";
 import "./globals.css";
+
+const sora = Sora({ subsets: ["latin", "latin-ext"], weight: ["500", "600", "700", "800"], variable: "--font-sora", display: "swap" });
+const manrope = Manrope({ subsets: ["latin", "latin-ext"], weight: ["400", "500", "600", "700"], variable: "--font-manrope", display: "swap" });
 
 export const metadata: Metadata = {
   title: "EasyFood Manager",
@@ -2214,17 +2224,7 @@ export const viewport: Viewport = { themeColor: "#0f172a" };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="pt-BR" className="dark">
-      <head>
-        {/* Mesmo link do legado: mesmo arquivo de fonte e mesmo nome de família (Sora/Manrope). */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        {/* eslint-disable-next-line @next/next/no-page-custom-font -- layout raiz; next/font renomearia a família */}
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap"
-        />
-      </head>
+    <html lang="pt-BR" className={`dark ${sora.variable} ${manrope.variable}`}>
       <body>
         <Providers>{children}</Providers>
       </body>

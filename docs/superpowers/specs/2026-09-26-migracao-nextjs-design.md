@@ -123,8 +123,8 @@ segurança). Qualquer 401 em `/api/v1/*` limpa o cache do TanStack Query e leva 
 ## 5. UI idêntica
 
 - Copiados sem alteração de valores: `index.css` (Navy Trust, dark-only), `tailwind.config.ts`,
-  Tailwind **3.4** (não v4), fontes Sora/Manrope pelo mesmo `<link>` do Google Fonts do
-  legado (`next/font` renomearia a família e mudaria o fallback — risco ao pixel-idêntico),
+  Tailwind **3.4** (não v4), fontes Sora/Manrope via `next/font/google` (auto-hospedadas, mesmos
+  arquivos e pesos do legado; `--font-heading`/`--font-body` apontam para as famílias geradas),
   componentes `components/ui` efetivamente usados, ícones `lucide-react`, `recharts`, `sonner`.
 - Cada tela do legado vira componente(s) em `modules/<feature>/ui/`, preservando JSX e classes
   Tailwind; muda só a origem dos dados (repositório via TanStack Query em vez do `data-service`).
