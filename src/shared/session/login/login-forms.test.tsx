@@ -17,6 +17,12 @@ beforeEach(() => {
 });
 
 describe("LanLoginForm", () => {
+  it("apaga senha legada deixada no navegador por versões antigas", () => {
+    localStorage.setItem("ecp_admin_password", "segredo-antigo");
+    render(<LanLoginForm />);
+    expect(localStorage.getItem("ecp_admin_password")).toBeNull();
+  });
+
   it("mostra os textos do legado no modo loja", () => {
     render(<LanLoginForm />);
     expect(screen.getByText("Modo Local · Admin API")).toBeInTheDocument();

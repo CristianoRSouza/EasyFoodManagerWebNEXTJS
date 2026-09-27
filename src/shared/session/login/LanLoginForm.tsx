@@ -11,6 +11,7 @@ import { ApiError } from "@/shared/http/api-error";
 import { sessionClient } from "@/shared/session/session-client";
 import { BootstrapPasswordForm } from "./BootstrapPasswordForm";
 import { LoginPageShell } from "./LoginPageShell";
+import { purgeLegacyPasswordStorage } from "./legacy-storage";
 import { NEEDS_BOOTSTRAP_CODES } from "./login-messages";
 import { rememberedEmail } from "./remembered-email";
 import { useExpiredSessionNotice } from "./use-expired-session-notice";
@@ -27,6 +28,7 @@ export function LanLoginForm() {
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- leitura pós-montagem de localStorage por navegador (evita mismatch de hidratação)
     setEmail(rememberedEmail.read());
+    purgeLegacyPasswordStorage();
   }, []);
 
   const handleLoginFailure = (error: unknown) => {

@@ -10,6 +10,7 @@ import { useToast } from "@/shared/ui/use-toast";
 import { sessionClient } from "@/shared/session/session-client";
 import { LoginPageShell } from "./LoginPageShell";
 import { PasswordResetDialog } from "./PasswordResetDialog";
+import { purgeLegacyPasswordStorage } from "./legacy-storage";
 import { rememberedEmail } from "./remembered-email";
 import { useExpiredSessionNotice } from "./use-expired-session-notice";
 
@@ -25,6 +26,7 @@ export function CloudLoginForm() {
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- leitura pós-montagem de localStorage por navegador (evita mismatch de hidratação)
     setEmail(rememberedEmail.read());
+    purgeLegacyPasswordStorage();
   }, []);
 
   const handleSubmit = async (event: FormEvent) => {
