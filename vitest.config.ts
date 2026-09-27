@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import { version } from "./package.json";
 
 export default defineConfig({
-  plugins: [react({ jsxRuntime: "automatic" })],
+  plugins: [react()],
   test: {
     environment: "jsdom",
     globals: true,

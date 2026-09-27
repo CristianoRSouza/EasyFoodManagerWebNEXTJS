@@ -44,6 +44,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
               <h1 className="text-xl font-semibold text-foreground">
                 Algo deu errado
               </h1>
+              {/* Texto mantido por paridade com o legado; o envio automático de relatório volta na Fase 5. */}
               <p className="text-sm text-muted-foreground">
                 Um erro inesperado ocorreu. Um relatório foi enviado automaticamente para análise.
               </p>

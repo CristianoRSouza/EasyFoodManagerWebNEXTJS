@@ -32,8 +32,15 @@ Variáveis opcionais (ver `.env.example`):
 npm run typecheck
 npm run lint
 npm test               # unidade e componentes
-npm run test:visual    # legado × Next, pixel a pixel (precisa do legado em ../easyfoodmanagerWEB)
+npm run test:visual    # legado × Next, pixel a pixel (pré-requisitos abaixo)
 ```
+
+`npm run test:visual` sobe o Next com `next start`, então exige `npm run build`
+antes, e precisa do repositório legado em `../easyfoodmanagerWEB` com as
+dependências dele instaladas (`npm install` lá).
+
+`npm install` funciona num clone novo graças ao `.npmrc` (`legacy-peer-deps=true`):
+sem ele, o npm quebra ao resolver os peers do vitest@4.
 
 ## Estrutura
 
