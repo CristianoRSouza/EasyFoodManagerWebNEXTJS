@@ -21,4 +21,13 @@ export default defineConfig([
       }],
     },
   },
+  {
+    // Copiados verbatim do repo legado (shadcn); não são código nosso para "corrigir" a fórmula.
+    files: ["src/shared/ui/primitives/**", "src/shared/ui/use-toast.ts"],
+    rules: {
+      "react-hooks/purity": "off",
+      "react-hooks/set-state-in-effect": "off",
+      "@typescript-eslint/no-unused-vars": "off",
+    },
+  },
 ]);
