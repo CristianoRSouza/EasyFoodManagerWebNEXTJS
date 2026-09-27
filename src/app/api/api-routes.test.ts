@@ -86,4 +86,14 @@ describe("/api/v1/[...path]", () => {
     await proxyRoute.GET(new NextRequest("http://x/api/v1/products"), { params: Promise.resolve({ path: ["products"] }) });
     expect(gateway.forward.mock.calls[0]![0].body).toBeNull();
   });
+
+  it.each([[["..", "admin"]], [["."]], [["products", ""]]])(
+    "recusa segmento de caminho inválido %j sem chamar o backend",
+    async (path) => {
+      const response = await proxyRoute.GET(new NextRequest("http://x/api/v1/x"), { params: Promise.resolve({ path }) });
+      expect(response.status).toBe(400);
+      expect(await response.json()).toEqual({ code: "invalid_path", message: "Caminho inválido." });
+      expect(gateway.forward).not.toHaveBeenCalled();
+    },
+  );
 });

@@ -1,10 +1,15 @@
-import type { NextRequest } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { getGateway } from "@/server/gateway";
 
 type Context = { params: Promise<{ path: string[] }> };
 
+const INVALID_SEGMENTS = new Set(["", ".", ".."]);
+
 async function forward(request: NextRequest, { params }: Context): Promise<Response> {
   const { path } = await params;
+  if (path.some((segment) => INVALID_SEGMENTS.has(segment))) {
+    return NextResponse.json({ code: "invalid_path", message: "Caminho inválido." }, { status: 400 });
+  }
   const hasBody = request.method !== "GET" && request.method !== "HEAD";
   return getGateway().forward({
     method: request.method,
