@@ -121,4 +121,51 @@ describe("CloudSessionGateway", () => {
       }
     });
   });
+
+  it("login com a API fora do ar vira 503 com a mensagem de login", async () => {
+    const fetchFn = vi.fn().mockRejectedValue(new TypeError("fetch failed"));
+    const result = await new CloudSessionGateway(config, fetchFn).login({ email: "a@b.com", password: "x" });
+    expect(result).toEqual({
+      ok: false,
+      status: 503,
+      error: { code: "backend_unreachable", message: "Não foi possível entrar agora." },
+      setCookies: [],
+    });
+  });
+
+  it.each([
+    ["corpo que não é JSON", new Response("<html>ok</html>", { status: 200 })],
+    ["JSON sem user", json(200, { ok: true })],
+    ["user sem id", json(200, { user: { email: "a@b.com" } })],
+  ])("login 200 com %s vira 502 invalid_response, sem cookie", async (_label, backend) => {
+    const withCookie = new Response(await backend.text(), { status: 200, headers: { "set-cookie": "efa_session=x; Path=/" } });
+    const result = await new CloudSessionGateway(config, vi.fn().mockResolvedValue(withCookie)).login({ email: "a", password: "b" });
+    expect(result).toEqual({
+      ok: false,
+      status: 502,
+      error: { code: "invalid_response", message: "A API devolveu uma resposta inválida." },
+      setCookies: [],
+    });
+  });
+
+  it("repasse com a API fora do ar não usa a mensagem de login", async () => {
+    const fetchFn = vi.fn().mockRejectedValue(new TypeError("fetch failed"));
+    const response = await new CloudSessionGateway(config, fetchFn).forward({
+      method: "GET", path: "/v1/me/stores", search: "", headers: new Headers(), body: null, cookieHeader: "efa_session=xyz",
+    });
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({
+      code: "backend_unreachable",
+      message: "Não foi possível contactar api.nuvem. Verifique o serviço e tente novamente.",
+    });
+  });
+
+  it("repasse de 429 preserva o retry-after", async () => {
+    const backend = new Response(JSON.stringify({ error: "rate_limited" }), { status: 429, headers: { "retry-after": "12" } });
+    const response = await new CloudSessionGateway(config, vi.fn().mockResolvedValue(backend)).forward({
+      method: "GET", path: "/v1/me/stores", search: "", headers: new Headers(), body: null, cookieHeader: "efa_session=xyz",
+    });
+    expect(response.status).toBe(429);
+    expect(response.headers.get("retry-after")).toBe("12");
+  });
 });

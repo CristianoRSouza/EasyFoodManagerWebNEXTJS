@@ -3,11 +3,10 @@ import type { ServerConfig } from "../config";
 import { backendUrl } from "../backend/backend-url";
 import { parseJsonSafely, toErrorBody, type ApiErrorBody } from "../backend/error-body";
 import { LAN_SESSION_COOKIE, expiredSessionCookie, readCookie, sessionCookie } from "./cookies";
-import { SESSION_EXPIRED, jsonResponse, pickHeaders } from "./json-response";
+import { SESSION_EXPIRED, jsonResponse, pickHeaders, relayBackendResponse } from "./json-response";
 import { readClaims } from "./jwt-claims";
 import {
   FORWARDED_REQUEST_HEADERS,
-  FORWARDED_RESPONSE_HEADERS,
   UNREACHABLE_CODE,
   type Credentials,
   type FirstAccessInput,
@@ -53,7 +52,7 @@ export class LanSessionGateway implements SessionGateway {
 
   async logout(_cookieHeader: string | null): Promise<string[]> {
     void _cookieHeader;
-    return [expiredSessionCookie(this.config.secureCookies)];
+    return [this.expiredCookie()];
   }
 
   async firstAccess({ email, newPassword, provisioningCode }: FirstAccessInput): Promise<GatewayResult<null>> {
@@ -67,7 +66,10 @@ export class LanSessionGateway implements SessionGateway {
 
   async forward(request: ForwardRequest): Promise<Response> {
     const token = readCookie(request.cookieHeader, LAN_SESSION_COOKIE);
-    if (!token || !readClaims(token, nowSec())) return jsonResponse(401, SESSION_EXPIRED);
+    if (!token || !readClaims(token, nowSec())) {
+      // Token vencido/inválido: apaga o cookie para o proxy parar de liberar as páginas.
+      return jsonResponse(401, SESSION_EXPIRED, token ? [this.expiredCookie()] : []);
+    }
 
     const headers = pickHeaders(request.headers, FORWARDED_REQUEST_HEADERS);
     headers.set("authorization", `Bearer ${token}`);
@@ -84,16 +86,11 @@ export class LanSessionGateway implements SessionGateway {
       return jsonResponse(503, this.unreachable());
     }
 
-    if (!backend.ok) {
-      const error = toErrorBody(backend.status, parseJsonSafely(await backend.text()));
-      const clear = backend.status === 401 ? [expiredSessionCookie(this.config.secureCookies)] : [];
-      return jsonResponse(backend.status, error, clear);
-    }
+    return relayBackendResponse(backend, backend.status === 401 ? [this.expiredCookie()] : []);
+  }
 
-    return new Response(backend.body, {
-      status: backend.status,
-      headers: pickHeaders(backend.headers, FORWARDED_RESPONSE_HEADERS),
-    });
+  private expiredCookie(): string {
+    return expiredSessionCookie(this.config.secureCookies);
   }
 
   private unreachable(): ApiErrorBody {

@@ -109,6 +109,36 @@ describe("LanSessionGateway", () => {
     expect(fetchFn).not.toHaveBeenCalled();
   });
 
+  it("repasse sem cookie de sessão não manda apagar cookie nenhum", async () => {
+    const response = await new LanSessionGateway(config, vi.fn()).forward({
+      method: "GET", path: "/v1/products", search: "", headers: new Headers(), body: null, cookieHeader: "outro=1",
+    });
+    expect(response.status).toBe(401);
+    expect(response.headers.getSetCookie()).toEqual([]);
+  });
+
+  it("repasse com JWT vencido responde 401 sem chamar a API e apaga o cookie", async () => {
+    const fetchFn = vi.fn();
+    const expired = `${encode({ alg: "HS256" })}.${encode({ sub: "u1", email: "a@loja.dev", exp: 1 })}.sig`;
+    const response = await new LanSessionGateway(config, fetchFn).forward({
+      method: "GET", path: "/v1/products", search: "", headers: new Headers(), body: null, cookieHeader: `efm_session=${expired}`,
+    });
+    expect(response.status).toBe(401);
+    expect(await response.json()).toEqual({ code: "unauthenticated", message: "Sua sessão expirou. Entre de novo." });
+    expect(response.headers.getSetCookie()).toEqual(["efm_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0"]);
+    expect(fetchFn).not.toHaveBeenCalled();
+  });
+
+  it("repasse de 429 preserva o retry-after", async () => {
+    const backend = new Response(JSON.stringify({ error: "Muitas requisições." }), { status: 429, headers: { "retry-after": "5" } });
+    const response = await new LanSessionGateway(config, vi.fn().mockResolvedValue(backend)).forward({
+      method: "GET", path: "/v1/products", search: "", headers: new Headers(), body: null, cookieHeader: `efm_session=${jwt}`,
+    });
+    expect(response.status).toBe(429);
+    expect(response.headers.get("retry-after")).toBe("5");
+    expect(response.headers.getSetCookie()).toEqual([]);
+  });
+
   it("401 da API no repasse apaga o cookie", async () => {
     const fetchFn = vi.fn().mockResolvedValue(json(401, { error: "Token inválido.", error_code: "invalid_token" }));
     const response = await new LanSessionGateway(config, fetchFn).forward({
