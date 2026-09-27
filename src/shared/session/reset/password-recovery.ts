@@ -46,7 +46,85 @@ export async function adoptRecoverySession(accessToken: string, refreshToken: st
   return !error;
 }
 
+const UPDATE_PASSWORD_FALLBACK = "Falha ao atualizar senha";
+
+/**
+ * Traduz mensagens de erro do Supabase Auth (em inglês) para PT-BR amigável.
+ * Mesmo mapeamento de `easyfoodmanagerWEB/src/lib/cloud-auth.ts` (`translateAuthError`),
+ * restrito ao fallback de `updatePassword` — a UI de recuperação é sempre PT-BR, então,
+ * ao contrário do legado, uma mensagem desconhecida cai no fallback em vez de ecoar o
+ * texto original (normalmente em inglês).
+ */
+function translateAuthError(raw: string | undefined): string {
+  if (!raw) return UPDATE_PASSWORD_FALLBACK;
+  const msg = raw.toLowerCase();
+
+  // Credenciais
+  if (msg.includes("invalid login credentials") || msg.includes("invalid_credentials")) {
+    return "Email ou senha incorretos.";
+  }
+  if (msg.includes("email not confirmed")) {
+    return "Email ainda não confirmado. Verifique a sua caixa de entrada.";
+  }
+  if (msg.includes("user not found")) {
+    return "Usuário não encontrado.";
+  }
+  if (msg.includes("user already registered") || msg.includes("already been registered")) {
+    return "Este email já está registado.";
+  }
+
+  // Senha
+  if (msg.includes("password should be at least")) {
+    return "A senha é demasiado curta. Use pelo menos 6 caracteres.";
+  }
+  if (msg.includes("new password should be different")) {
+    return "A nova senha deve ser diferente da anterior.";
+  }
+  if (msg.includes("weak password") || msg.includes("password is too weak")) {
+    return "Senha demasiado fraca. Combine letras, números e símbolos.";
+  }
+
+  // Rate limit / segurança
+  if (msg.includes("over_email_send_rate_limit") || msg.includes("email rate limit")) {
+    return "Limite de envio de emails atingido. Tente novamente em alguns minutos.";
+  }
+  if (msg.includes("rate limit") || msg.includes("too many requests")) {
+    return "Demasiadas tentativas. Aguarde um momento e tente novamente.";
+  }
+
+  // Sessão / token
+  if (msg.includes("jwt expired") || msg.includes("token has expired")) {
+    return "A sua sessão expirou. Faça login novamente.";
+  }
+  if (msg.includes("invalid token") || msg.includes("token not found")) {
+    return "Link inválido ou expirado. Solicite um novo email de recuperação.";
+  }
+
+  // Configuração / chaves
+  if (msg.includes("legacy api keys are disabled")) {
+    return "Configuração desatualizada do servidor. Contacte o administrador.";
+  }
+  if (msg.includes("anonymous sign-ins are disabled")) {
+    return "Logins anónimos estão desativados.";
+  }
+  if (msg.includes("signups not allowed") || msg.includes("signup is disabled")) {
+    return "Novos registros estão desativados.";
+  }
+
+  // Email malformado
+  if (msg.includes("unable to validate email") || msg.includes("invalid email")) {
+    return "Email inválido. Verifique o formato.";
+  }
+
+  // Rede
+  if (msg.includes("failed to fetch") || msg.includes("network")) {
+    return "Sem ligação ao servidor. Verifique a sua internet.";
+  }
+
+  return UPDATE_PASSWORD_FALLBACK;
+}
+
 export async function updatePassword(password: string): Promise<void> {
   const { error } = await supabase().auth.updateUser({ password });
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(translateAuthError(error.message));
 }
