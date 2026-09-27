@@ -23,16 +23,17 @@ describe("readServerConfig", () => {
       BACKEND: "cloud",
       EASYFOOD_API_URL: "http://localhost:3010",
       NEXT_PUBLIC_ADMIN_PLATFORM_URL: "https://billing.homolog.com/",
+      NODE_ENV: "test",
     });
     expect(config.adminPlatformUrl).toBe("https://billing.homolog.com");
   });
 
   it("recusa BACKEND ausente ou desconhecido com mensagem clara", () => {
-    expect(() => readServerConfig({ EASYFOOD_API_URL: "http://x" })).toThrow(/BACKEND/);
-    expect(() => readServerConfig({ BACKEND: "electron", EASYFOOD_API_URL: "http://x" })).toThrow(/BACKEND/);
+    expect(() => readServerConfig({ EASYFOOD_API_URL: "http://x", NODE_ENV: "test" })).toThrow(/BACKEND/);
+    expect(() => readServerConfig({ BACKEND: "electron", EASYFOOD_API_URL: "http://x", NODE_ENV: "test" })).toThrow(/BACKEND/);
   });
 
   it("recusa EASYFOOD_API_URL inválida", () => {
-    expect(() => readServerConfig({ BACKEND: "lan", EASYFOOD_API_URL: "localhost" })).toThrow(/EASYFOOD_API_URL/);
+    expect(() => readServerConfig({ BACKEND: "lan", EASYFOOD_API_URL: "localhost", NODE_ENV: "test" })).toThrow(/EASYFOOD_API_URL/);
   });
 });
