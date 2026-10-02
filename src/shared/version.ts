@@ -8,4 +8,7 @@ export function formatVersionLabel(version: string): string {
 }
 
 /** `NEXT_PUBLIC_APP_VERSION` vem do `package.json`, pelo `next.config.ts` (e pelo `vitest.config.ts` nos testes). */
-export const APP_VERSION_LABEL = formatVersionLabel(process.env.NEXT_PUBLIC_APP_VERSION ?? "0.0.0");
+export const APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION ?? "0.0.0";
+
+/** A versão como o painel a exibe. */
+export const APP_VERSION_LABEL = formatVersionLabel(APP_VERSION);

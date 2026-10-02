@@ -95,6 +95,8 @@ describe("CloudLoginForm", () => {
   it("mostra os textos do legado no modo nuvem", () => {
     render(<CloudLoginForm />);
     expect(screen.getByText("Modo Nuvem · EasyFoodAPI")).toBeInTheDocument();
+    // Legado 1.3.12 (PR #51): exclamação só no login da nuvem; o da loja continua sem.
+    expect(screen.getByRole("heading", { name: "Bem-vindo de volta!" })).toBeInTheDocument();
     expect(screen.getByPlaceholderText("usuário@empresa.com")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Esqueci a senha" })).toBeInTheDocument();
   });

@@ -3,6 +3,7 @@
 import React from "react";
 import { Button } from "@/shared/ui/primitives/button";
 import { AlertTriangle } from "lucide-react";
+import { installErrorReporter, reportError } from "@/shared/errors/error-reporter";
 
 interface Props {
   children: React.ReactNode;
@@ -23,9 +24,14 @@ export class ErrorBoundary extends React.Component<Props, State> {
     return { hasError: true, errorMessage: error.message || "Erro desconhecido" };
   }
 
+  /** O relator (registros + erros não tratados) liga com o painel — no legado, no `App`. */
+  componentDidMount() {
+    installErrorReporter();
+  }
+
   componentDidCatch(error: Error, info: React.ErrorInfo) {
-    // Relatório automático volta na Fase 5, pelo servidor do Next.
-    console.error("[ErrorBoundary]", error, info.componentStack);
+    // Enviado pelo servidor do Next (`POST /api/error-report`) ao EasyGuardian, como o legado.
+    void reportError(error, { component_stack: info.componentStack ?? undefined });
   }
 
   handleReload = () => {
@@ -44,7 +50,6 @@ export class ErrorBoundary extends React.Component<Props, State> {
               <h1 className="text-xl font-semibold text-foreground">
                 Algo deu errado
               </h1>
-              {/* Texto mantido por paridade com o legado; o envio automático de relatório volta na Fase 5. */}
               <p className="text-sm text-muted-foreground">
                 Um erro inesperado ocorreu. Um relatório foi enviado automaticamente para análise.
               </p>

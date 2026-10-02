@@ -9,11 +9,15 @@ import { Input } from "@/shared/ui/primitives/input";
 import { Label } from "@/shared/ui/primitives/label";
 import { useToast } from "@/shared/ui/use-toast";
 import { APP_VERSION_LABEL } from "@/shared/version";
-import { adoptRecoverySession, readRecoveryLink, updatePassword, verifyRecoveryToken } from "./password-recovery";
+import type { SupabasePublicConfig } from "@/shared/runtime/ambiente";
+import { adoptRecoverySession, configureRecoverySupabase, readRecoveryLink, updatePassword, verifyRecoveryToken } from "./password-recovery";
 
 const MIN_PASSWORD_LENGTH = 8;
 
-export function ResetPasswordPage() {
+/** `supabase`: o projeto do ambiente, lido no servidor (`app/reset-password/page.tsx`). */
+export function ResetPasswordPage({ supabase }: { supabase?: SupabasePublicConfig | null }) {
+  // Antes de qualquer chamada (o efeito abaixo valida o link já na montagem).
+  configureRecoverySupabase(supabase);
   const { toast } = useToast();
   const router = useRouter();
   const [checking, setChecking] = useState(true);

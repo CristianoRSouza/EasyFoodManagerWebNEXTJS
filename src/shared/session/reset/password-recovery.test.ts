@@ -7,13 +7,32 @@ vi.mock("@supabase/supabase-js", () => ({
 describe("updatePassword", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  async function configured() {
+    const mod = await import("./password-recovery");
     // Nunca reais: só existem para o SupabaseClient mockado conseguir "construir".
-    process.env.NEXT_PUBLIC_SUPABASE_URL = "https://example.invalid.test";
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = "dummy-publishable-key";
+    mod.configureRecoverySupabase({ url: "https://example.invalid.test", publishableKey: "dummy-publishable-key" });
+    return mod;
+  }
+
+  it("usa o Supabase do ambiente entregue pelo servidor (não o do build)", async () => {
+    const { createClient } = await import("@supabase/supabase-js");
+    const { updatePassword, configureRecoverySupabase } = await import("./password-recovery");
+    configureRecoverySupabase({ url: "https://homolog.invalid.test", publishableKey: "chave-homolog" });
+    updateUser.mockResolvedValue({ error: null });
+    await updatePassword("novasenha1");
+    expect(createClient).toHaveBeenCalledWith("https://homolog.invalid.test", "chave-homolog", expect.anything());
+  });
+
+  it("sem Supabase configurado no servidor, falha com mensagem clara", async () => {
+    const { updatePassword, configureRecoverySupabase } = await import("./password-recovery");
+    configureRecoverySupabase(null);
+    await expect(updatePassword("novasenha1")).rejects.toThrow(/SUPABASE_URL/);
   });
 
   it("traduz uma mensagem de erro conhecida do Supabase para PT-BR (mesmo mapeamento do legado)", async () => {
-    const { updatePassword } = await import("./password-recovery");
+    const { updatePassword } = await configured();
     updateUser.mockResolvedValue({
       error: { message: "New password should be different from the old password." },
     });
@@ -22,7 +41,7 @@ describe("updatePassword", () => {
   });
 
   it("mensagem desconhecida cai no fallback em PT-BR do legado, nunca no texto original", async () => {
-    const { updatePassword } = await import("./password-recovery");
+    const { updatePassword } = await configured();
     updateUser.mockResolvedValue({
       error: { message: "Some totally unmapped supabase error that nobody expects" },
     });

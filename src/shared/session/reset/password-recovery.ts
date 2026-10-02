@@ -1,21 +1,33 @@
 "use client";
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import type { SupabasePublicConfig } from "@/shared/runtime/ambiente";
 
 /**
  * O ÚNICO ponto do painel que fala com o Supabase: o link de recuperação do e-mail é
  * emitido e validado por ele, e a API não tem rota equivalente.
+ *
+ * O projeto (URL + chave publicável) é o do AMBIENTE em execução — `SUPABASE_URL`/
+ * `SUPABASE_PUBLISHABLE_KEY` lidos no servidor e entregues pela página (`configureRecoverySupabase`),
+ * não congelados no build: a mesma imagem serve produção e homologação (legado 1.3.12, PR #48).
  */
+let config: SupabasePublicConfig | null = null;
 let client: SupabaseClient | null = null;
+
+/** Define o Supabase do ambiente. Trocar de projeto descarta o cliente anterior. */
+export function configureRecoverySupabase(next: SupabasePublicConfig | null | undefined): void {
+  const value = next ?? null;
+  if (value?.url === config?.url && value?.publishableKey === config?.publishableKey) return;
+  config = value;
+  client = null;
+}
 
 function supabase(): SupabaseClient {
   if (client) return client;
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-  if (!url || !key) {
-    throw new Error("A troca de senha precisa de NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY.");
+  if (!config) {
+    throw new Error("A troca de senha precisa de SUPABASE_URL e SUPABASE_PUBLISHABLE_KEY no servidor.");
   }
-  client = createClient(url, key, { auth: { persistSession: false, detectSessionInUrl: false } });
+  client = createClient(config.url, config.publishableKey, { auth: { persistSession: false, detectSessionInUrl: false } });
   return client;
 }
 

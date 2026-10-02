@@ -26,20 +26,20 @@ describe("cookies de sessão", () => {
 
 describe("normalizeRelayedCookie", () => {
   it("troca Path restrito por Path=/ para o proxy enxergar o cookie em todas as páginas", () => {
-    expect(normalizeRelayedCookie("efa_session=xyz; Path=/api; HttpOnly")).toBe("efa_session=xyz; Path=/; HttpOnly");
+    expect(normalizeRelayedCookie("easyfood_session=xyz; Path=/api; HttpOnly")).toBe("easyfood_session=xyz; Path=/; HttpOnly");
   });
 
   it("remove Domain para o cookie ficar com o host do painel", () => {
-    expect(normalizeRelayedCookie("efa_session=xyz; Domain=api.nuvem; Path=/; Secure")).toBe("efa_session=xyz; Path=/; Secure");
+    expect(normalizeRelayedCookie("easyfood_session=xyz; Domain=api.nuvem; Path=/; Secure")).toBe("easyfood_session=xyz; Path=/; Secure");
   });
 
   it("preserva os demais atributos, na ordem", () => {
-    expect(normalizeRelayedCookie("efa_session=a=b; path=/v1; HttpOnly; SameSite=Lax; Max-Age=60; domain=.x.com; Secure")).toBe(
-      "efa_session=a=b; Path=/; HttpOnly; SameSite=Lax; Max-Age=60; Secure",
+    expect(normalizeRelayedCookie("easyfood_session=a=b; path=/v1; HttpOnly; SameSite=Lax; Max-Age=60; domain=.x.com; Secure")).toBe(
+      "easyfood_session=a=b; Path=/; HttpOnly; SameSite=Lax; Max-Age=60; Secure",
     );
   });
 
   it("cookie sem Path ganha Path=/", () => {
-    expect(normalizeRelayedCookie("efa_session=; Max-Age=0")).toBe("efa_session=; Max-Age=0; Path=/");
+    expect(normalizeRelayedCookie("easyfood_session=; Max-Age=0")).toBe("easyfood_session=; Max-Age=0; Path=/");
   });
 });

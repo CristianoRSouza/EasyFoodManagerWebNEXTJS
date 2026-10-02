@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useAutoHideScroll } from "@/shared/ui/use-auto-hide-scroll";
 import { Building2, Check, Search, Store, Loader2, RefreshCw, X } from "lucide-react";
 import {
@@ -32,14 +32,26 @@ function StoreList({ children }: { children: ReactNode }) {
 }
 
 export const CompanySelectionModal = ({ open, onOpenChange }: Props) => {
-  const { companies: availableCompanies, storesByCompany: allStoresByCompany, loading, select, selection, refresh } = useTenant();
-  const allStoresLoaded = !loading;
+  const {
+    companies: availableCompanies,
+    storesByCompany: allStoresByCompany,
+    allStoresLoaded,
+    loadAllStores,
+    select,
+    selection,
+    refresh,
+  } = useTenant();
   const selectedCompanyId = selection?.companyId ?? null;
   const selectedStoreId = selection?.storeId ?? null;
 
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedPair, setSelectedPair] = useState<{ companyId: string; storeId: string } | null>(selection);
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Como o legado: `/me/all-stores` só é pedido quando o seletor abre.
+  useEffect(() => {
+    if (open && !allStoresLoaded) loadAllStores();
+  }, [open, allStoresLoaded, loadAllStores]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);

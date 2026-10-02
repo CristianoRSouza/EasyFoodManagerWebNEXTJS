@@ -10,7 +10,7 @@ describe("formatVersionLabel", () => {
     expect(formatVersionLabel("1.2.96-beta")).toBe("1.2.96-beta");
   });
 
-  it("usa a versão do package.json (injetada pelo next.config/vitest.config)", () => {
-    expect(APP_VERSION_LABEL).toBe("1.2.96");
+  it("usa a versão do package.json (injetada pelo next.config/vitest.config) — a mesma do legado 1.3.13", () => {
+    expect(APP_VERSION_LABEL).toBe("1.3.13");
   });
 });

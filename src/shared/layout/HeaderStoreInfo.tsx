@@ -1,13 +1,21 @@
 "use client";
 
-import { Building2, ChevronDown, Store } from "lucide-react";
+import { AlertTriangle, Building2, ChevronDown, Store } from "lucide-react";
 import { Button } from "@/shared/ui/primitives/button";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/shared/ui/primitives/tooltip";
 import { cn } from "@/shared/ui/cn";
 import { useTenant } from "@/shared/tenant/tenant-context";
+import { LicensePlanBadge } from "@/shared/license/LicensePlanBadge";
+import { usePlanHistoryWindow } from "@/shared/plan/use-plan-history-window";
+import { headerLicenseWarning } from "@/shared/license/license-status";
+import { useLicenseStatus } from "@/shared/license/use-license-status";
 
 export function HeaderStoreInfo({ onOpenModal }: { onOpenModal(): void }) {
   const { selectedCompany, selectedStore, companies, storesByCompany } = useTenant();
+  const { data: plan } = usePlanHistoryWindow();
+  const { data: license } = useLicenseStatus();
   if (!selectedCompany) return null;
+  const warning = headerLicenseWarning(license);
 
   const storeCount = Object.values(storesByCompany).flat().length;
   const canChange = companies.length > 1 || storeCount > 1;
@@ -33,6 +41,29 @@ export function HeaderStoreInfo({ onOpenModal }: { onOpenModal(): void }) {
             {selectedStore.legacy_store_code} – {selectedStore.trade_name}
           </span>
         </>
+      )}
+      {(plan?.planName || plan?.planSlug) && (
+        <LicensePlanBadge planSlug={plan?.planSlug} displayLabel={plan?.planName} className="ml-0.5 sm:ml-1" />
+      )}
+      {warning && (
+        <TooltipProvider delayDuration={100}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span
+                className={cn(
+                  "ml-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full",
+                  warning.isExpired ? "text-destructive" : "text-amber-500",
+                )}
+                aria-label={warning.label}
+              >
+                <AlertTriangle className="h-3.5 w-3.5" />
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="text-xs">
+              {warning.tooltip}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       )}
       {canChange && <ChevronDown className="hidden h-3.5 w-3.5 shrink-0 text-muted-foreground sm:inline-block" />}
     </Button>

@@ -27,7 +27,17 @@ export interface ForwardRequest {
 /** Tudo que muda entre os dois backends, e nada além disso. */
 export interface SessionGateway {
   login(credentials: Credentials): Promise<GatewayResult<SessionUser>>;
+  /**
+   * Quem EXIBIR como logado. Na loja lê as claims do JWT sem validar a assinatura — nunca use
+   * para autorizar nada que o próprio Next faça (ver {@link SessionGateway.verifiedUser}).
+   */
   currentUser(cookieHeader: string | null): Promise<SessionUser | null>;
+  /**
+   * Quem AUTENTICAR: a sessão confirmada pelo backend (assinatura e validade). Para rotas que o
+   * próprio Next atende sem repassar ao backend (ex.: `/api/error-report`). Falha fechada: backend
+   * fora do ar ou recusando é `null`.
+   */
+  verifiedUser(cookieHeader: string | null): Promise<SessionUser | null>;
   /** Devolve os `Set-Cookie` que encerram a sessão no navegador. */
   logout(cookieHeader: string | null): Promise<string[]>;
   firstAccess(input: FirstAccessInput): Promise<GatewayResult<null>>;

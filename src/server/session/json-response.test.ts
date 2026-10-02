@@ -7,12 +7,12 @@ describe("relayBackendResponse", () => {
       status: 201,
       headers: { "content-type": "application/json", "x-internal": "segredo", "set-cookie": "api=1; Path=/" },
     });
-    const response = await relayBackendResponse(backend, ["efa_session=n; Path=/"]);
+    const response = await relayBackendResponse(backend, ["easyfood_session=n; Path=/"]);
     expect(response.status).toBe(201);
     expect(await response.text()).toBe('{"a":1}');
     expect(response.headers.get("content-type")).toBe("application/json");
     expect(response.headers.get("x-internal")).toBeNull();
-    expect(response.headers.getSetCookie()).toEqual(["efa_session=n; Path=/"]);
+    expect(response.headers.getSetCookie()).toEqual(["easyfood_session=n; Path=/"]);
   });
 
   it("erro: corpo normalizado com os cookies pedidos", async () => {

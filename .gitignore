@@ -10,3 +10,8 @@ test-results/
 playwright-report/
 .superpowers/
 *.tsbuildinfo
+
+# Screenshots de validação (contêm dados reais de produção/homologação) — ficam só na máquina
+docs/superpowers/plans/evidencias-*/
+# Relatórios de validação contra ambientes reais (contas, hosts e falhas abertas das APIs) — ficam só na máquina
+docs/superpowers/plans/validacao-*.md

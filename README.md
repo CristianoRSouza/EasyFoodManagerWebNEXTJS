@@ -1,7 +1,7 @@
 # EasyFood Manager (Next.js)
 
 Painel administrativo do EasyFood Manager, só web. Visual idêntico ao painel
-legado (`easyfoodmanagerWEB`), sem Electron.
+legado (EasyFoodManager-Web 1.3.12, clone `apiNuvem`), sem Electron.
 
 ## Rodar
 
@@ -25,6 +25,10 @@ Variáveis opcionais (ver `.env.example`):
 |---|---|
 | `SESSION_COOKIE_SECURE` | `false` quando o painel é servido em HTTP puro na rede da loja; `true` atrás de HTTPS. Ausente: `true` em produção, `false` em desenvolvimento. |
 | `ADMIN_PLATFORM_URL` | Endereço do EasyBilling (Planos e Créditos IA), lido só no servidor. Padrão: `https://billing.easysoftcloud.com.br`. |
+| `ERROR_REPORT_SECRET` | Liga o relatório automático de erros: o navegador envia a `POST /api/error-report` e o servidor encaminha ao EasyGuardian com `x-report-secret` (o mesmo segredo da edge `error-report-proxy` do legado). Só no servidor. **Ausente: envio desligado** (a rota responde 204 e descarta o relatório). |
+| `EASYFOOD_AMBIENTE` | `homolog` mostra a faixa "HOMOLOGAÇÃO" no topo e o prefixo `[HOMOLOGAÇÃO]` no título da aba (como o legado 1.3.12). Ausente ou outro valor: produção. Lido em execução, no servidor. |
+| `SUPABASE_URL` / `SUPABASE_PUBLISHABLE_KEY` | Projeto Supabase do ambiente, usado só pela tela de redefinição de senha. Lidos em execução, no servidor (a mesma build serve produção e homologação). Só a chave **publicável**. |
+| `ERROR_REPORT_URL` | Destino alternativo do relatório de erros. Padrão: o EasyGuardian do legado. **Precisa ser `https://`** (o segredo vai no cabeçalho); outro esquema desliga o envio e fica registrado no log do servidor. |
 
 ## Verificar
 
@@ -36,8 +40,9 @@ npm run test:visual    # legado × Next, pixel a pixel (pré-requisitos abaixo)
 ```
 
 `npm run test:visual` sobe o Next com `next start`, então exige `npm run build`
-antes, e precisa do repositório legado em `../easyfoodmanagerWEB` com as
-dependências dele instaladas (`npm install` lá).
+antes, e precisa do repositório legado em `../apiNuvem` (EasyFoodManager-Web 1.3.12) com
+as dependências dele instaladas (`npm ci` lá). O harness injeta no legado um projeto Supabase
+fictício (`tests/visual/harness-supabase.ts`) e intercepta todo `*.supabase.co`.
 
 `npm install` funciona num clone novo graças ao `.npmrc` (`legacy-peer-deps=true`):
 sem ele, o npm quebra ao resolver os peers do vitest@4.

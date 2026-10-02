@@ -28,6 +28,16 @@ export default defineConfig([
       "react-hooks/purity": "off",
       "react-hooks/set-state-in-effect": "off",
       "@typescript-eslint/no-unused-vars": "off",
+      "@typescript-eslint/no-empty-object-type": "off",
+    },
+  },
+  {
+    // LazyFiscalCard: cópia fiel de LEGACY/src/components/nfce-issuer/LazyFiscalCard.tsx.
+    // O fetch disparado em `useEffect` (eager e IntersectionObserver) é a fila
+    // sequencial/paralela do legado; preservado tal qual (ver comentário no arquivo).
+    files: ["src/shared/ui/issuer-sections/LazyFiscalCard.tsx"],
+    rules: {
+      "react-hooks/set-state-in-effect": "off",
     },
   },
 ]);

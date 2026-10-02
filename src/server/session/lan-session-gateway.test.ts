@@ -8,6 +8,8 @@ const config: ServerConfig = {
   apiDisplayOrigin: "api.loja",
   adminPlatformUrl: "https://billing.easysoftcloud.com.br",
   secureCookies: false,
+  ambiente: "producao",
+  supabase: null,
 };
 const encode = (value: object) => Buffer.from(JSON.stringify(value)).toString("base64url");
 const farFuture = Math.floor(Date.now() / 1000) + 3600;
@@ -60,6 +62,41 @@ describe("LanSessionGateway", () => {
   it("cookie malformado é ausência de sessão, não erro", async () => {
     const gateway = new LanSessionGateway(config, vi.fn());
     expect(await gateway.currentUser("efm_session=%")).toBeNull();
+  });
+
+  describe("verifiedUser (autorização, não exibição)", () => {
+    it("confirma o token com a API (Bearer em rota protegida e sem efeito colateral) e devolve o usuário", async () => {
+      const fetchFn = vi.fn().mockResolvedValue(json(200, { data: { version: "1.0.0" } }));
+      const user = await new LanSessionGateway(config, fetchFn).verifiedUser(`efm_session=${jwt}`);
+      expect(user).toEqual({ id: "u1", email: "a@loja.dev" });
+      const [url, init] = fetchFn.mock.calls[0]!;
+      expect(url).toBe("http://api.loja/v1/meta/app-info");
+      expect(init.method ?? "GET").toBe("GET");
+      expect(new Headers(init.headers).get("authorization")).toBe(`Bearer ${jwt}`);
+    });
+
+    it("token forjado (assinatura inválida): a API recusa e não há usuário", async () => {
+      const forged = `${encode({ alg: "HS256" })}.${encode({ sub: "intruso", email: "x@x", exp: farFuture })}.forjada`;
+      const fetchFn = vi.fn().mockResolvedValue(json(401, { error: "invalid_token" }));
+      expect(await new LanSessionGateway(config, fetchFn).verifiedUser(`efm_session=${forged}`)).toBeNull();
+    });
+
+    it("sem cookie, malformado ou vencido: nem chama a API", async () => {
+      const fetchFn = vi.fn();
+      const gateway = new LanSessionGateway(config, fetchFn);
+      const expired = `${encode({ alg: "HS256" })}.${encode({ sub: "u1", email: "a", exp: 1 })}.sig`;
+      expect(await gateway.verifiedUser(null)).toBeNull();
+      expect(await gateway.verifiedUser("efm_session=%")).toBeNull();
+      expect(await gateway.verifiedUser(`efm_session=${expired}`)).toBeNull();
+      expect(fetchFn).not.toHaveBeenCalled();
+    });
+
+    it("API fora do ar ou com erro: falha fechada (sem usuário)", async () => {
+      const down = new LanSessionGateway(config, vi.fn().mockRejectedValue(new TypeError("fetch failed")));
+      expect(await down.verifiedUser(`efm_session=${jwt}`)).toBeNull();
+      const broken = new LanSessionGateway(config, vi.fn().mockResolvedValue(json(500, { error: "x" })));
+      expect(await broken.verifiedUser(`efm_session=${jwt}`)).toBeNull();
+    });
   });
 
   it("logout apaga o cookie sem chamar a API", async () => {

@@ -10,7 +10,30 @@ describe("readServerConfig", () => {
       apiDisplayOrigin: "127.0.0.1:4080",
       adminPlatformUrl: "https://billing.easysoftcloud.com.br",
       secureCookies: false,
+      ambiente: "producao",
+      supabase: null,
     });
+  });
+
+  it("EASYFOOD_AMBIENTE=homolog liga a homologação; outro valor é produção (legado 1.3.12, PR #48)", () => {
+    const base = { BACKEND: "cloud", EASYFOOD_API_URL: "http://localhost:3010", NODE_ENV: "test" as const };
+    expect(readServerConfig({ ...base, EASYFOOD_AMBIENTE: "homolog" }).ambiente).toBe("homolog");
+    expect(readServerConfig({ ...base, EASYFOOD_AMBIENTE: "staging" }).ambiente).toBe("producao");
+  });
+
+  it("Supabase do ambiente lido em execução, sem barra final; incompleto vira null", () => {
+    const base = { BACKEND: "cloud", EASYFOOD_API_URL: "http://localhost:3010", NODE_ENV: "test" as const };
+    expect(
+      readServerConfig({ ...base, SUPABASE_URL: "https://homolog.example.test/", SUPABASE_PUBLISHABLE_KEY: "sb_publishable_x" }).supabase,
+    ).toEqual({ url: "https://homolog.example.test", publishableKey: "sb_publishable_x" });
+    expect(readServerConfig({ ...base, SUPABASE_URL: "https://homolog.example.test" }).supabase).toBeNull();
+    expect(readServerConfig({ ...base, SUPABASE_PUBLISHABLE_KEY: "k" }).supabase).toBeNull();
+  });
+
+  it("recusa SUPABASE_URL inválida", () => {
+    expect(() =>
+      readServerConfig({ BACKEND: "cloud", EASYFOOD_API_URL: "http://x", NODE_ENV: "test", SUPABASE_URL: "nao-e-url", SUPABASE_PUBLISHABLE_KEY: "k" }),
+    ).toThrow(/SUPABASE_URL/);
   });
 
   it("sem SESSION_COOKIE_SECURE, cookie Secure só em produção", () => {

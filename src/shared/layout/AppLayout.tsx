@@ -6,17 +6,38 @@ import { Button } from "@/shared/ui/primitives/button";
 import { SidebarProvider, SidebarTrigger } from "@/shared/ui/primitives/sidebar";
 import { useRuntime } from "@/shared/runtime/runtime-context";
 import { useTenant } from "@/shared/tenant/tenant-context";
+import { LicenseExpiredBanner } from "@/shared/license/LicenseExpiredBanner";
 import { AppSidebar } from "./AppSidebar";
 import { CompanySelectionModal } from "./CompanySelectionModal";
 import { HeaderStoreInfo } from "./HeaderStoreInfo";
 import { RuntimeModeBadge } from "./RuntimeModeBadge";
 import { StoreGate } from "./StoreGate";
-import { UserMenu } from "./UserMenu";
 
 /** O modal só abre se a falta de loja persistir ~200ms (evita piscar em recarregamentos). */
 const SELECTION_MODAL_DELAY_MS = 200;
 
-export function AppLayout({ children }: { children: ReactNode }) {
+function LanIdentityPending({ loading }: { loading: boolean }) {
+  return (
+    <div className="flex items-center justify-center h-64">
+      {loading ? (
+        <span className="text-muted-foreground animate-pulse text-sm">Carregando…</span>
+      ) : (
+        <span className="text-muted-foreground text-sm">Não foi possível identificar a loja deste servidor.</span>
+      )}
+    </div>
+  );
+}
+
+interface AppLayoutProps {
+  children: ReactNode;
+  /**
+   * Botão do assistente de IA, injetado pelo `app/(panel)/layout.tsx` — a casca (`shared`) não
+   * importa módulos. Aparece só na nuvem e com loja, como no legado (`cloudActive && selectedStoreId`).
+   */
+  assistant?: ReactNode;
+}
+
+export function AppLayout({ children, assistant }: AppLayoutProps) {
   const { backend } = useRuntime();
   const cloud = backend === "cloud";
   const { needsSelection, selectedCompany, selection, loading } = useTenant();
@@ -42,6 +63,10 @@ export function AppLayout({ children }: { children: ReactNode }) {
     if (cloud && needsSelection && !modalOpen) setModalOpen(true);
   };
   const blocked = cloud && !selection;
+  // Na loja não há escolha: a loja é a do servidor (`/site-identity`). As telas de dados exigem
+  // o tenant (`useRequiredTenant`), então o conteúdo espera a identidade chegar — com o mesmo
+  // "Carregando…" que o legado mostra enquanto a rota carrega.
+  const awaitingLanIdentity = !cloud && !selection;
 
   return (
     <SidebarProvider>
@@ -61,18 +86,28 @@ export function AppLayout({ children }: { children: ReactNode }) {
             <div className="flex items-center gap-1">
               <RuntimeModeBadge />
               {cloud && selectedCompany && <HeaderStoreInfo onOpenModal={() => setModalOpen(true)} />}
-              {cloud && <UserMenu />}
+              {/* Sem menu do usuário: no legado ele depende de sessão SUPABASE (`cloudGetSession()`), que o
+                  login da EasyFoodAPI não cria — a homologação real (2026-10-01) não o mostra. Sair fica na sidebar. */}
               <Button variant="ghost" size="icon" onClick={() => setDark(!dark)} className="h-7 w-7">
                 {dark ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
               </Button>
             </div>
           </header>
+          {/* Licença e assistente de IA existem só na nuvem, como no legado (`cloudActive`). */}
+          {cloud && <LicenseExpiredBanner />}
           <main className="sidebar-scroll min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-6" onClickCapture={reopenIfNeeded}>
-            {blocked ? <StoreGate loading={loading} onSelect={() => setModalOpen(true)} /> : children}
+            {blocked ? (
+              <StoreGate loading={loading} onSelect={() => setModalOpen(true)} />
+            ) : awaitingLanIdentity ? (
+              <LanIdentityPending loading={loading} />
+            ) : (
+              children
+            )}
           </main>
         </div>
       </div>
       {cloud && <CompanySelectionModal open={modalOpen} onOpenChange={setModalOpen} />}
+      {cloud && selection && assistant}
     </SidebarProvider>
   );
 }

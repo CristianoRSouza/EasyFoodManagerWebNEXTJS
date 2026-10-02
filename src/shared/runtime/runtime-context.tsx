@@ -1,12 +1,17 @@
 "use client";
 
 import { createContext, useContext, type ReactNode } from "react";
+import type { Ambiente, SupabasePublicConfig } from "./ambiente";
 
 export interface RuntimeInfo {
   backend: "cloud" | "lan";
   /** `host:porta` do backend, exibido no badge do cabeçalho. */
   apiDisplayOrigin: string;
   adminPlatformUrl: string;
+  /** Ausente = produção. Ver `ambiente.ts`. */
+  ambiente?: Ambiente;
+  /** Supabase público do ambiente (só a redefinição de senha usa); ausente/`null` = não configurado. */
+  supabase?: SupabasePublicConfig | null;
 }
 
 const RuntimeContext = createContext<RuntimeInfo | null>(null);

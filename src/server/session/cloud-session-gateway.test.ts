@@ -8,6 +8,8 @@ const config: ServerConfig = {
   apiDisplayOrigin: "api.nuvem",
   adminPlatformUrl: "https://billing.easysoftcloud.com.br",
   secureCookies: false,
+  ambiente: "producao",
+  supabase: null,
 };
 const json = (status: number, body: unknown, setCookie?: string) => {
   const headers = new Headers({ "content-type": "application/json" });
@@ -18,7 +20,7 @@ const json = (status: number, body: unknown, setCookie?: string) => {
 describe("CloudSessionGateway", () => {
   it("login retransmite o cookie da EasyFoodAPI", async () => {
     const fetchFn = vi.fn().mockResolvedValue(
-      json(200, { user: { id: "u1", email: "a@b.com" } }, "efa_session=xyz; Path=/; HttpOnly; SameSite=Lax"),
+      json(200, { user: { id: "u1", email: "a@b.com" } }, "easyfood_session=xyz; Path=/; HttpOnly; SameSite=Lax"),
     );
     const result = await new CloudSessionGateway(config, fetchFn).login({ email: " a@b.com ", password: "x" });
     expect(fetchFn.mock.calls[0]![0]).toBe("http://api.nuvem/api/v1/auth/login");
@@ -26,7 +28,7 @@ describe("CloudSessionGateway", () => {
     expect(result).toEqual({
       ok: true,
       data: { id: "u1", email: "a@b.com" },
-      setCookies: ["efa_session=xyz; Path=/; HttpOnly; SameSite=Lax"],
+      setCookies: ["easyfood_session=xyz; Path=/; HttpOnly; SameSite=Lax"],
     });
   });
 
@@ -44,9 +46,9 @@ describe("CloudSessionGateway", () => {
 
   it("currentUser consulta /auth/me com o cookie do navegador", async () => {
     const fetchFn = vi.fn().mockResolvedValue(json(200, { id: "u1", email: "a@b.com" }));
-    const user = await new CloudSessionGateway(config, fetchFn).currentUser("efa_session=xyz");
+    const user = await new CloudSessionGateway(config, fetchFn).currentUser("easyfood_session=xyz");
     expect(user).toEqual({ id: "u1", email: "a@b.com" });
-    expect(new Headers(fetchFn.mock.calls[0]![1].headers).get("cookie")).toBe("efa_session=xyz");
+    expect(new Headers(fetchFn.mock.calls[0]![1].headers).get("cookie")).toBe("easyfood_session=xyz");
   });
 
   it("currentUser sem cookie não chama a API; 401 é ausência de sessão", async () => {
@@ -54,12 +56,23 @@ describe("CloudSessionGateway", () => {
     const gateway = new CloudSessionGateway(config, fetchFn);
     expect(await gateway.currentUser(null)).toBeNull();
     expect(fetchFn).not.toHaveBeenCalled();
-    expect(await gateway.currentUser("efa_session=velho")).toBeNull();
+    expect(await gateway.currentUser("easyfood_session=velho")).toBeNull();
+  });
+
+  it("verifiedUser é o /auth/me: a EasyFoodAPI valida a sessão; recusada ou fora do ar é ausência", async () => {
+    const ok = vi.fn().mockResolvedValue(json(200, { id: "u1", email: "a@b.com" }));
+    expect(await new CloudSessionGateway(config, ok).verifiedUser("easyfood_session=xyz")).toEqual({ id: "u1", email: "a@b.com" });
+    expect(ok.mock.calls[0]![0]).toBe("http://api.nuvem/api/v1/auth/me");
+    expect(await new CloudSessionGateway(config, vi.fn().mockResolvedValue(json(401, {}))).verifiedUser("easyfood_session=forjado")).toBeNull();
+    expect(await new CloudSessionGateway(config, vi.fn().mockRejectedValue(new TypeError("x"))).verifiedUser("easyfood_session=xyz")).toBeNull();
+    const none = vi.fn();
+    expect(await new CloudSessionGateway(config, none).verifiedUser(null)).toBeNull();
+    expect(none).not.toHaveBeenCalled();
   });
 
   it("logout chama a API e retransmite o cookie que apaga a sessão", async () => {
-    const fetchFn = vi.fn().mockResolvedValue(new Response(null, { status: 204, headers: { "set-cookie": "efa_session=; Max-Age=0; Path=/" } }));
-    expect(await new CloudSessionGateway(config, fetchFn).logout("efa_session=xyz")).toEqual(["efa_session=; Max-Age=0; Path=/"]);
+    const fetchFn = vi.fn().mockResolvedValue(new Response(null, { status: 204, headers: { "set-cookie": "easyfood_session=; Max-Age=0; Path=/" } }));
+    expect(await new CloudSessionGateway(config, fetchFn).logout("easyfood_session=xyz")).toEqual(["easyfood_session=; Max-Age=0; Path=/"]);
   });
 
   it("primeiro acesso não existe na nuvem", async () => {
@@ -68,18 +81,18 @@ describe("CloudSessionGateway", () => {
   });
 
   it("repasse leva cookie e tenant, e devolve o Set-Cookie de renovação", async () => {
-    const fetchFn = vi.fn().mockResolvedValue(json(200, { ok: true }, "efa_session=novo; Path=/; HttpOnly"));
+    const fetchFn = vi.fn().mockResolvedValue(json(200, { ok: true }, "easyfood_session=novo; Path=/; HttpOnly"));
     const headers = new Headers({ "x-company-id": "c1", "x-store-id": "s1", authorization: "Bearer intruso" });
     const response = await new CloudSessionGateway(config, fetchFn).forward({
-      method: "GET", path: "/v1/me/stores", search: "", headers, body: null, cookieHeader: "efa_session=xyz",
+      method: "GET", path: "/v1/me/stores", search: "", headers, body: null, cookieHeader: "easyfood_session=xyz",
     });
     const sent = new Headers(fetchFn.mock.calls[0]![1].headers);
     expect(fetchFn.mock.calls[0]![0]).toBe("http://api.nuvem/api/v1/me/stores");
-    expect(sent.get("cookie")).toBe("efa_session=xyz");
+    expect(sent.get("cookie")).toBe("easyfood_session=xyz");
     expect(sent.get("x-company-id")).toBe("c1");
     expect(sent.get("x-store-id")).toBe("s1");
     expect(sent.get("authorization")).toBeNull();
-    expect(response.headers.getSetCookie()).toEqual(["efa_session=novo; Path=/; HttpOnly"]);
+    expect(response.headers.getSetCookie()).toEqual(["easyfood_session=novo; Path=/; HttpOnly"]);
   });
 
   it("repasse mantém content-type e content-disposition de downloads", async () => {
@@ -90,7 +103,7 @@ describe("CloudSessionGateway", () => {
       }),
     );
     const response = await new CloudSessionGateway(config, fetchFn).forward({
-      method: "GET", path: "/v1/nfce/notes-xml", search: "", headers: new Headers(), body: null, cookieHeader: "efa_session=xyz",
+      method: "GET", path: "/v1/nfce/notes-xml", search: "", headers: new Headers(), body: null, cookieHeader: "easyfood_session=xyz",
     });
     expect(response.headers.get("content-type")).toBe("application/zip");
     expect(response.headers.get("content-disposition")).toBe('attachment; filename="notas.zip"');
@@ -98,8 +111,8 @@ describe("CloudSessionGateway", () => {
   });
 
   describe("cookies retransmitidos ficam visíveis ao proxy (Path=/, sem Domain)", () => {
-    const raw = "efa_session=xyz; Domain=api.nuvem; Path=/api; HttpOnly";
-    const normalized = "efa_session=xyz; Path=/; HttpOnly";
+    const raw = "easyfood_session=xyz; Domain=api.nuvem; Path=/api; HttpOnly";
+    const normalized = "easyfood_session=xyz; Path=/; HttpOnly";
 
     it("no login", async () => {
       const fetchFn = vi.fn().mockResolvedValue(json(200, { user: { id: "u1", email: "a@b.com" } }, raw));
@@ -109,13 +122,13 @@ describe("CloudSessionGateway", () => {
 
     it("no logout", async () => {
       const fetchFn = vi.fn().mockResolvedValue(new Response(null, { status: 204, headers: { "set-cookie": raw } }));
-      expect(await new CloudSessionGateway(config, fetchFn).logout("efa_session=xyz")).toEqual([normalized]);
+      expect(await new CloudSessionGateway(config, fetchFn).logout("easyfood_session=xyz")).toEqual([normalized]);
     });
 
     it("no repasse, com sucesso ou erro", async () => {
       for (const backend of [json(200, { ok: true }, raw), json(403, { error: "forbidden" }, raw)]) {
         const response = await new CloudSessionGateway(config, vi.fn().mockResolvedValue(backend)).forward({
-          method: "GET", path: "/v1/me/stores", search: "", headers: new Headers(), body: null, cookieHeader: "efa_session=xyz",
+          method: "GET", path: "/v1/me/stores", search: "", headers: new Headers(), body: null, cookieHeader: "easyfood_session=xyz",
         });
         expect(response.headers.getSetCookie()).toEqual([normalized]);
       }
@@ -138,7 +151,7 @@ describe("CloudSessionGateway", () => {
     ["JSON sem user", json(200, { ok: true })],
     ["user sem id", json(200, { user: { email: "a@b.com" } })],
   ])("login 200 com %s vira 502 invalid_response, sem cookie", async (_label, backend) => {
-    const withCookie = new Response(await backend.text(), { status: 200, headers: { "set-cookie": "efa_session=x; Path=/" } });
+    const withCookie = new Response(await backend.text(), { status: 200, headers: { "set-cookie": "easyfood_session=x; Path=/" } });
     const result = await new CloudSessionGateway(config, vi.fn().mockResolvedValue(withCookie)).login({ email: "a", password: "b" });
     expect(result).toEqual({
       ok: false,
@@ -151,7 +164,7 @@ describe("CloudSessionGateway", () => {
   it("repasse com a API fora do ar não usa a mensagem de login", async () => {
     const fetchFn = vi.fn().mockRejectedValue(new TypeError("fetch failed"));
     const response = await new CloudSessionGateway(config, fetchFn).forward({
-      method: "GET", path: "/v1/me/stores", search: "", headers: new Headers(), body: null, cookieHeader: "efa_session=xyz",
+      method: "GET", path: "/v1/me/stores", search: "", headers: new Headers(), body: null, cookieHeader: "easyfood_session=xyz",
     });
     expect(response.status).toBe(503);
     expect(await response.json()).toEqual({
@@ -163,7 +176,7 @@ describe("CloudSessionGateway", () => {
   it("repasse de 429 preserva o retry-after", async () => {
     const backend = new Response(JSON.stringify({ error: "rate_limited" }), { status: 429, headers: { "retry-after": "12" } });
     const response = await new CloudSessionGateway(config, vi.fn().mockResolvedValue(backend)).forward({
-      method: "GET", path: "/v1/me/stores", search: "", headers: new Headers(), body: null, cookieHeader: "efa_session=xyz",
+      method: "GET", path: "/v1/me/stores", search: "", headers: new Headers(), body: null, cookieHeader: "easyfood_session=xyz",
     });
     expect(response.status).toBe(429);
     expect(response.headers.get("retry-after")).toBe("12");

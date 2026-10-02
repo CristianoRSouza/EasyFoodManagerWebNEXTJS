@@ -83,8 +83,12 @@
 
     --transition-smooth: 200ms cubic-bezier(0.32, 0.72, 0, 1);
 
-    --font-heading: var(--font-sora), var(--font-manrope), system-ui, sans-serif;
-    --font-body: var(--font-manrope), system-ui, sans-serif;
+    /* Nomes literais, como no legado — não `var(--font-sora)`/`var(--font-manrope)`: o next/font
+       põe "Sora Fallback"/"Manrope Fallback" (Arial com métricas ajustadas) nessas variáveis, e um
+       glifo que as fontes não têm (ex.: "→" em "Sync (FB → PG)") saía em Arial em vez do
+       `system-ui` do legado. As @font-face "Sora"/"Manrope" continuam vindo do next/font. */
+    --font-heading: 'Sora', 'Manrope', system-ui, sans-serif;
+    --font-body: 'Manrope', system-ui, sans-serif;
     --font-mono: ui-monospace, 'JetBrains Mono', monospace;
   }
 

@@ -23,6 +23,9 @@ interface LoginResponse {
 
 const nowSec = () => Math.floor(Date.now() / 1000);
 
+/** Rota protegida (`requireAuth`) e só de leitura da easyfoodmanagerAPI — ver `verifiedUser`. */
+const VERIFY_PATH = "/v1/meta/app-info";
+
 /** easyfoodmanagerAPI: JWT Bearer de 8h, sem /auth/me e sem logout. O Next guarda o token. */
 export class LanSessionGateway implements SessionGateway {
   constructor(
@@ -48,6 +51,29 @@ export class LanSessionGateway implements SessionGateway {
     const token = readCookie(cookieHeader, LAN_SESSION_COOKIE);
     const claims = token ? readClaims(token, nowSec()) : null;
     return claims ? { id: claims.sub, email: claims.email } : null;
+  }
+
+  /**
+   * A easyfoodmanagerAPI não tem `/auth/me`. A confirmação é uma chamada autenticada barata e sem
+   * efeito colateral: `GET /v1/meta/app-info` passa pelo `requireAuth` da API, que valida
+   * assinatura e validade do JWT. 200 = token legítimo; qualquer outra coisa (401 de token
+   * forjado, erro, API fora do ar) = sem usuário.
+   */
+  async verifiedUser(cookieHeader: string | null): Promise<SessionUser | null> {
+    const token = readCookie(cookieHeader, LAN_SESSION_COOKIE);
+    const claims = token ? readClaims(token, nowSec()) : null;
+    if (!token || !claims) return null;
+    try {
+      const response = await this.fetchFn(backendUrl(this.config, VERIFY_PATH), {
+        method: "GET",
+        headers: { accept: "application/json", authorization: `Bearer ${token}` },
+        cache: "no-store",
+      });
+      await response.body?.cancel().catch(() => undefined);
+      return response.ok ? { id: claims.sub, email: claims.email } : null;
+    } catch {
+      return null;
+    }
   }
 
   async logout(_cookieHeader: string | null): Promise<string[]> {

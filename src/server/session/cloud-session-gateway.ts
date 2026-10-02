@@ -68,6 +68,11 @@ export class CloudSessionGateway implements SessionGateway {
     return readUser(parseJsonSafely(await response.text()));
   }
 
+  /** Na nuvem o `/auth/me` já é a EasyFoodAPI validando a sessão: exibir e autenticar coincidem. */
+  verifiedUser(cookieHeader: string | null): Promise<SessionUser | null> {
+    return this.currentUser(cookieHeader);
+  }
+
   async logout(cookieHeader: string | null): Promise<string[]> {
     if (!cookieHeader) return [];
     const response = await this.call("/v1/auth/logout", { method: "POST", headers: { cookie: cookieHeader } });

@@ -6,5 +6,5 @@
 /** Gravado pelo próprio Next no modo loja (guarda o JWT da easyfoodmanagerAPI). */
 export const LAN_SESSION_COOKIE = "efm_session";
 
-/** Gravado pela EasyFoodAPI na nuvem e só retransmitido. Nome a confirmar contra a EasyFoodAPI real. */
-export const CLOUD_SESSION_COOKIE = "efa_session";
+/** Gravado pela EasyFoodAPI na nuvem e só retransmitido. Nome confirmado na homologação em 2026-10-01. */
+export const CLOUD_SESSION_COOKIE = "easyfood_session";

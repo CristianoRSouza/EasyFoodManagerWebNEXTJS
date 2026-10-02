@@ -66,7 +66,7 @@ export function CloudLoginForm() {
   return (
     <LoginPageShell
       modeBadge={{ icon: Cloud, label: "Modo Nuvem · EasyFoodAPI" }}
-      title="Bem-vindo de volta"
+      title="Bem-vindo de volta!"
       subtitle="Acesse sua conta para gerenciar totens, NFC-e e sincronização."
     >
       <>

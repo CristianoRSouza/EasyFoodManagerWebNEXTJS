@@ -4,6 +4,7 @@ import { NextRequest } from "next/server";
 const gateway = {
   login: vi.fn(),
   currentUser: vi.fn(),
+  verifiedUser: vi.fn(),
   logout: vi.fn(),
   firstAccess: vi.fn(),
   forward: vi.fn(),
@@ -15,6 +16,7 @@ const { GET: session } = await import("./session/route");
 const { POST: logout } = await import("./session/logout/route");
 const { POST: firstAccess } = await import("./session/first-access/route");
 const proxyRoute = await import("./v1/[...path]/route");
+const { POST: errorReport } = await import("./error-report/route");
 
 const post = (url: string, body: unknown, cookie?: string) =>
   new NextRequest(url, { method: "POST", body: JSON.stringify(body), headers: cookie ? { cookie } : {} });
@@ -109,4 +111,28 @@ describe("/api/v1/[...path]", () => {
       expect(gateway.forward).not.toHaveBeenCalled();
     },
   );
+});
+
+describe("/api/error-report", () => {
+  const report = { url: "http://x/", user_agent: "UA", error_message: "boom", console_logs: [], steps: [], metadata: {} };
+  const reportRequest = (ip: string) =>
+    new NextRequest("http://x/api/error-report", {
+      method: "POST",
+      body: JSON.stringify(report),
+      headers: { cookie: "efm_session=a.eyJzdWIiOiJpbnRydXNvIiwiZW1haWwiOiJ4QHgifQ.forjada", "content-type": "application/json", origin: "http://x", "x-forwarded-for": ip },
+    });
+
+  it("autentica pela sessão VERIFICADA (não pelas claims decodificadas): token forjado é 401", async () => {
+    gateway.currentUser.mockResolvedValue({ id: "intruso", email: "x@x" });
+    gateway.verifiedUser.mockResolvedValue(null);
+    const response = await errorReport(reportRequest("10.1.1.1"));
+    expect(response.status).toBe(401);
+    expect(gateway.verifiedUser).toHaveBeenCalledWith(expect.stringContaining("efm_session="));
+    expect(gateway.currentUser).not.toHaveBeenCalled();
+  });
+
+  it("sessão verificada e envio desligado (sem ERROR_REPORT_SECRET): 204", async () => {
+    gateway.verifiedUser.mockResolvedValue({ id: "u1", email: "a@b" });
+    expect((await errorReport(reportRequest("10.1.1.2"))).status).toBe(204);
+  });
 });

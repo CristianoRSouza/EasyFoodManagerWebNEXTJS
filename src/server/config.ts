@@ -1,5 +1,6 @@
 import "server-only";
 import { z } from "zod";
+import { resolveAmbiente, type Ambiente, type SupabasePublicConfig } from "@/shared/runtime/ambiente";
 
 export type Backend = "cloud" | "lan";
 
@@ -12,6 +13,14 @@ export interface ServerConfig {
   /** Base do EasyBilling (Planos e Créditos IA). */
   adminPlatformUrl: string;
   secureCookies: boolean;
+  /** `EASYFOOD_AMBIENTE` — "homolog" liga a faixa de homologação (legado 1.3.12, PR #48). */
+  ambiente: Ambiente;
+  /**
+   * Supabase PÚBLICO do ambiente (`SUPABASE_URL` + `SUPABASE_PUBLISHABLE_KEY`), lido em execução —
+   * a mesma imagem serve produção e homologação sem recompilar. `null` quando ausente: só a tela de
+   * redefinição de senha precisa dele, e ela avisa.
+   */
+  supabase: SupabasePublicConfig | null;
 }
 
 const DEFAULT_ADMIN_PLATFORM_URL = "https://billing.easysoftcloud.com.br";
@@ -27,6 +36,14 @@ const schema = z.object({
     .enum(["true", "false"], { errorMap: () => ({ message: 'SESSION_COOKIE_SECURE deve ser "true" ou "false".' }) })
     .optional(),
   NODE_ENV: z.string().optional(),
+  EASYFOOD_AMBIENTE: z.string().optional(),
+  SUPABASE_URL: z
+    .string()
+    .optional()
+    .refine((v) => !v?.trim() || z.string().url().safeParse(v.trim()).success, {
+      message: "SUPABASE_URL deve ser uma URL (ex.: https://<projeto>.supabase.co).",
+    }),
+  SUPABASE_PUBLISHABLE_KEY: z.string().optional(),
 });
 
 const withoutTrailingSlash = (url: string) => url.replace(/\/+$/, "");
@@ -47,5 +64,15 @@ export function readServerConfig(env: NodeJS.ProcessEnv = process.env): ServerCo
     secureCookies: parsed.data.SESSION_COOKIE_SECURE
       ? parsed.data.SESSION_COOKIE_SECURE === "true"
       : parsed.data.NODE_ENV === "production",
+    ambiente: resolveAmbiente(parsed.data.EASYFOOD_AMBIENTE),
+    supabase: readSupabase(parsed.data.SUPABASE_URL, parsed.data.SUPABASE_PUBLISHABLE_KEY),
   };
+}
+
+/** Os dois juntos ou nada — URL sem chave (ou o contrário) não monta um cliente que funcione. */
+function readSupabase(url: string | undefined, key: string | undefined): SupabasePublicConfig | null {
+  const cleanUrl = url?.trim();
+  const cleanKey = key?.trim();
+  if (!cleanUrl || !cleanKey) return null;
+  return { url: withoutTrailingSlash(cleanUrl), publishableKey: cleanKey };
 }

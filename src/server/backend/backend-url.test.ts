@@ -7,6 +7,8 @@ const base: Omit<ServerConfig, "backend"> = {
   apiDisplayOrigin: "127.0.0.1:4080",
   adminPlatformUrl: "https://billing.easysoftcloud.com.br",
   secureCookies: false,
+  ambiente: "producao",
+  supabase: null,
 };
 
 describe("backendUrl", () => {

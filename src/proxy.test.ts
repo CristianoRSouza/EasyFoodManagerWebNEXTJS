@@ -10,7 +10,7 @@ describe("proxy", () => {
   });
 
   it("com cookie de sessão de qualquer backend, segue", () => {
-    for (const cookie of ["efm_session=t", "efa_session=t"]) {
+    for (const cookie of ["efm_session=t", "easyfood_session=t"]) {
       const response = proxy(new NextRequest("http://x/products", { headers: { cookie } }));
       expect(response.headers.get("location")).toBeNull();
     }
